@@ -2449,73 +2449,29 @@ function initFormatSection() {
   const avoidFirstSlot = document.getElementById("avoid-first-slot-streak");
   const avoidLastSlot = document.getElementById("avoid-last-slot-streak");
 
-  function refreshFormatPanels(typeValue) {
+function refreshFormatPanels(typeValue) {
     const type = typeValue || (formatSelect ? formatSelect.value : "liga");
     const ligaPanel = document.getElementById("format-liga-options");
     const zonasPanel = document.getElementById("format-zonas-options");
     const elimPanel = document.getElementById("format-elim-options");
 
+    // LÓGICA DEPURADA: Solo mostramos el panel de opciones de Liga/Rondas
+    // porque el formato 'especial-8x3' lo usa para definir si va "ida" o "ida-vuelta".
+    const showLigaOptions =
+      type === "liga" || type === "zonas" || type === "especial-8x3";
+    
+    // Ocultamos el resto por ser innecesario para el formato EVITA.
+
     if (ligaPanel) {
-      ligaPanel.style.display =
-        type === "liga" || type === "especial-8x3" ? "block" : "none";
+      ligaPanel.style.display = showLigaOptions ? "block" : "none";
     }
     if (zonasPanel) {
-      zonasPanel.style.display =
-        type === "zonas" || type === "zonas-playoffs" ? "block" : "none";
+      zonasPanel.style.display = "none";
     }
     if (elimPanel) {
-      elimPanel.style.display =
-        type === "eliminacion" || type === "zonas-playoffs" ? "block" : "none";
+      elimPanel.style.display = "none";
     }
-  }
-
-  function syncFromState() {
-    const t = appState.currentTournament;
-    if (!t) return;
-
-    const fmt = t.format || {};
-
-    if (formatSelect) {
-      formatSelect.value = fmt.type || "liga";
     }
-    if (ligaRounds) {
-      ligaRounds.value =
-        fmt.liga && fmt.liga.rounds ? fmt.liga.rounds : "ida";
-    }
-    if (zonasQualifiers) {
-      const val =
-        fmt.zonas && typeof fmt.zonas.qualifiersPerZone === "number"
-          ? fmt.zonas.qualifiersPerZone
-          : 2;
-      zonasQualifiers.value = String(val);
-    }
-    if (zonasBestPlaces) {
-      zonasBestPlaces.value =
-        (fmt.zonas && fmt.zonas.bestPlacesMode) || "none";
-    }
-    if (elimType) {
-      elimType.value =
-        (fmt.eliminacion && fmt.eliminacion.type) || "simple";
-    }
-    if (avoidSameProvince) {
-      avoidSameProvince.checked =
-        fmt.restrictions && !!fmt.restrictions.avoidSameProvince;
-    }
-    if (avoidSameClub) {
-      avoidSameClub.checked =
-        fmt.restrictions && !!fmt.restrictions.avoidSameClub;
-    }
-    if (avoidFirstSlot) {
-      avoidFirstSlot.checked =
-        fmt.restrictions && !!fmt.restrictions.avoidFirstSlotStreak;
-    }
-    if (avoidLastSlot) {
-      avoidLastSlot.checked =
-        fmt.restrictions && !!fmt.restrictions.avoidLastSlotStreak;
-    }
-
-    refreshFormatPanels(fmt.type || "liga");
-  }
 
   function updateFormat() {
     const t = appState.currentTournament;
