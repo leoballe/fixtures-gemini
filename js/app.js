@@ -2251,21 +2251,38 @@ function initNavigation() {
 // =====================
 
 function initStep1() {
-  ["t-name", "t-category", "t-date-start", "t-date-end", "t-storage-mode"].forEach(
-    (id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("change", () => {
-        const t = appState.currentTournament;
-        if (!t) return;
-        t.name = document.getElementById("t-name").value.trim();
-        t.category = document.getElementById("t-category").value.trim();
-        t.dateStart = document.getElementById("t-date-start").value;
-        t.dateEnd = document.getElementById("t-date-end").value;
-        t.storageMode = document.getElementById("t-storage-mode").value;
-        upsertCurrentTournament();
-      });
-    }
+  const inputIds = ["t-name", "t-category", "t-date-start", "t-date-end", "t-storage-mode"];
+  
+  const updateTournamentData = () => {
+    const t = appState.currentTournament;
+    if (!t) return;
+
+    // 1. Actualizar el estado del torneo con los nuevos valores
+    t.name = document.getElementById("t-name").value.trim();
+    t.category = document.getElementById("t-category").value.trim();
+    t.dateStart = document.getElementById("t-date-start").value;
+    t.dateEnd = document.getElementById("t-date-end").value;
+    t.storageMode = document.getElementById("t-storage-mode").value;
+
+    // 2. Si las fechas cambiaron, asegurar que los días (Día 1, Día 2, etc.) se generen
+    ensureDayConfigs(t);
+    
+    // 3. Guardar el torneo
+    upsertCurrentTournament();
+    
+    // 4. Refrescar la tabla de días en el Paso 4, en caso de que el usuario avance
+    renderDayConfigs();
+    renderFieldDaysMatrix();
+  };
+
+  inputIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("change", updateTournamentData);
+    // Agregamos un listener de 'input' para campos de texto/nombre
+    el.addEventListener("input", updateTournamentData); 
+  });
+}
   );
 }
 
