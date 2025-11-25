@@ -2687,26 +2687,57 @@ function initFieldsSection() {
       document.getElementById("field-max-matches").value = "";
     });
 
+ // Sincronización de horarios/duración
   ["day-time-min", "day-time-max", "match-duration", "rest-min"].forEach(
     (id) => {
       const el = document.getElementById(id);
-      el &&
-        el.addEventListener("change", () => {
-          const t = appState.currentTournament;
-          if (!t) return;
-          t.dayTimeMin =
-            document.getElementById("day-time-min").value || "09:00";
-          t.dayTimeMax =
-            document.getElementById("day-time-max").value || "22:00";
-          t.matchDurationMinutes = Number(
-            document.getElementById("match-duration").value || 60
-          );
-          t.restMinMinutes = Number(
-            document.getElementById("rest-min").value || 90
-          );
-          upsertCurrentTournament();
-        });
+      if (!el) return;
+
+      const updateGlobalScheduleParams = () => {
+        const t = appState.currentTournament;
+        if (!t) return;
+
+        // --- Lectura de valores y actualización del estado ---
+        t.dayTimeMin = document.getElementById("day-time-min").value || "09:00";
+        t.dayTimeMax = document.getElementById("day-time-max").value || "22:00";
+        t.matchDurationMinutes = Number(
+          document.getElementById("match-duration").value || 60
+        );
+        t.restMinMinutes = Number(
+          document.getElementById("rest-min").value || 90
+        );
+        // La actualización de dayConfigs (Día 1, Día 2...) se hace
+        // en el listener de las fechas del Paso 1, pero la forzamos aquí
+        // para asegurarnos que se aplican los límites de tiempo.
+        ensureDayConfigs(t);
+        
+        upsertCurrentTournament();
+        renderFieldDaysMatrix(); // Refresca la matriz de canchas si cambia el número de días
+      };
+
+      el.addEventListener("change", updateGlobalScheduleParams);
+      el.addEventListener("input", updateGlobalScheduleParams);
     }
+  );
+
+  // Llamamos a syncUIFromState_step4 para asegurar que los inputs de tiempo/duración reflejen
+  // el estado actual del torneo si se cargó desde LocalStorage.
+  syncUIFromState_step4(); 
+  
+  renderFieldsTable(); // Deja este al final para que renderice la tabla
+}
+
+// ------------------------------------------------------------------
+// **NUEVA FUNCIÓN REQUERIDA:** Sincronizar campos del Paso 4 (Horarios/Duración)
+// ------------------------------------------------------------------
+function syncUIFromState_step4() {
+    const t = appState.currentTournament;
+    if (!t) return;
+    document.getElementById("day-time-min").value = t.dayTimeMin || "09:00";
+    document.getElementById("day-time-max").value = t.dayTimeMax || "22:00";
+    document.getElementById("match-duration").value = t.matchDurationMinutes || 60;
+    document.getElementById("rest-min").value = t.restMinMinutes || 90;
+}
   );
 
   renderFieldsTable();
@@ -3081,12 +3112,24 @@ if (
   fase1_dia1.forEach((m) => (m.preferredDayIndex = idxDiaZonas1));
   fase1_dia2.forEach((m) => (m.preferredDayIndex = idxDiaZonas2));
 
-  // Fases posteriores: mínimo tercer día jugable (si existe)
-  if (playableDayIndexes.length > 2) {
-    const idxMinOtros = playableDayIndexes[2];
+// Fases posteriores: mínimo tercer día jugable (si existe)
+  // Día 1 y Día 2 se usan para FASE 1 (ZONAS).
+  // La siguiente fase comienza al menos en el tercer día jugable.
+  if (playableDayIndexes.length >= 3) {
+    const idxMinOtros = playableDayIndexes[2]; // Tercer índice jugable (índice 2)
     otros.forEach((m) => {
       m.minDayIndex = idxMinOtros;
     });
+  } else if (playableDayIndexes.length === 2) {
+    // Caso de advertencia: Solo hay 2 días jugables, pero se necesitan 5.
+    // Asignamos el día 2 (índice 1) para que no se mezcle con el Día 1.
+    const idxMinOtros = playableDayIndexes[1];
+    otros.forEach((m) => {
+      m.minDayIndex = idxMinOtros;
+    });
+  } else {
+    // Si solo hay Día 1 o menos, no asignamos minDayIndex, el scheduler intentará asignarlo.
+    console.warn("ADVERTENCIA: Se necesita configurar al menos 3 días jugables para el formato Evita 8x3.");
   }
 
   // Actualizamos base: primero Fase 1 (en orden especial), luego el resto
