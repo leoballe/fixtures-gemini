@@ -2281,7 +2281,7 @@ function initStep1() {
     el.addEventListener("change", updateTournamentData);
     // Agregamos un listener de 'input' para campos de texto/nombre
     el.addEventListener("input", updateTournamentData); 
-  );
+  }); // <--- Cierre de forEach correcto
 }
 
 function syncUIFromState_step1() {
@@ -2748,12 +2748,11 @@ function initFieldsSection() {
 function syncUIFromState_step4() {
     const t = appState.currentTournament;
     if (!t) return;
-    document.getElementById("day-time-min").value = t.dayTimeMin || "09:00";
-    document.getElementById("day-time-max").value = t.dayTimeMax || "22:00";
-    document.getElementById("match-duration").value = t.matchDurationMinutes || 60;
-    document.getElementById("rest-min").value = t.restMinMinutes || 90;
+    document.getElementById("day-time-min").value = t.dayTimeMin || "08:00";
+    document.getElementById("day-time-max").value = t.dayTimeMax || "20:00";
+    document.getElementById("match-duration").value = t.matchDurationMinutes || 75;
+    document.getElementById("rest-min").value = t.restMinMinutes || 0;
 }
-  );
 
   renderFieldsTable();
 }
