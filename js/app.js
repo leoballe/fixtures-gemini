@@ -2174,21 +2174,32 @@ function reemplazarCodigoEnSeed(seedLabel, codeMap) {
 //  INICIALIZACIÓN GENERAL
 // =====================
 
+// =====================
+//  INICIALIZACIÓN GENERAL
+// =====================
+
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Cargar datos guardados del navegador
   loadTournamentsFromLocalStorage();
-  startNewTournament();
-  initNavigation();
+  
+  // 2. Iniciar un nuevo torneo (crea el objeto 'currentTournament')
+  startNewTournament(); 
+  
+  // 3. INICIALIZAR LA NAVEGACIÓN (debe ir después de que el DOM cargó y el estado se preparó)
+  initNavigation(); 
+
+  // 4. Inicializar las secciones
   initStep1();
-  initScheduleDaysUI(); // NUEVO: inicializa la tabla de días
+  initScheduleDaysUI(); 
   initTeamsSection();
   initFieldsSection();
   initBreaksSection();
   initFormatSection();
   initFixtureGeneration();
   initReportsAndExport();
-  initTournamentsModal(); // NUEVO
-
+  initTournamentsModal(); 
 });
+// ... (el resto del archivo debe permanecer igual)
 
 function startNewTournament() {
   appState.currentTournament = createEmptyTournament();
