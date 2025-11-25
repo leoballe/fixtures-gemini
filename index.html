@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fixtures - Juegos Evita</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+
+    <header>
+        <h1>Generador de Fixtures para Juegos Evita</h1>
+    </header>
+
+    <div class="configuracion">
+        <h2>1. Configuración del Evento</h2>
+        
+        <label for="nombreEvento">Nombre del Evento:</label>
+        <input type="text" id="nombreEvento" value="Juegos Evita 2025" required><br><br>
+
+        <label for="deporte">Deporte:</label>
+        <select id="deporte" required>
+            <option value="">Seleccione un Deporte</option>
+            <option value="futbol">Fútbol</option>
+            <option value="basquet">Básquet</option>
+            <option value="voley">Vóley</option>
+            </select><br><br>
+
+        <label for="numParticipantes">Número de Participantes/Equipos:</label>
+        <input type="number" id="numParticipantes" min="2" max="64" value="8" required><br><br>
+        
+        <button onclick="iniciarConfiguracion()">Generar Fixture Básico</button>
+    </div>
+
+    <div class="fixture-output">
+        <h3>2. Fixture Generado (Eliminación Simple)</h3>
+        <div id="fixtureContainer">
+            <p>Define los parámetros y haz clic en "Generar Fixture Básico" para comenzar.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Sistema desarrollado con la ayuda de Gemini.</p>
+    </footer>
+    
+    <script src="script.js"></script>
+
+</body>
+</html>
