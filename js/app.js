@@ -2281,8 +2281,6 @@ function initStep1() {
     el.addEventListener("change", updateTournamentData);
     // Agregamos un listener de 'input' para campos de texto/nombre
     el.addEventListener("input", updateTournamentData); 
-  });
-}
   );
 }
 
