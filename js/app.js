@@ -1689,7 +1689,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initFieldsSection();
   initBreaksSection();
   initFormatSection();
-  initFixtureGeneration();
+  ();
   initReportsAndExport();
   initTournamentsModal(); // NUEVO
 
@@ -2511,10 +2511,17 @@ function initFixtureGeneration() {
            });
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
            const patron = [
+             // DÍA 1 (11 partidos)
+             // Ronda 1 completa (Z1 a Z7)
              { r: 1, z: z1 }, { r: 1, z: z2 }, { r: 1, z: z3 }, { r: 1, z: z4 },
              { r: 1, z: z5 }, { r: 1, z: z6 }, { r: 1, z: z7 },
+             // Ronda 2 (Z1 a Z4)
              { r: 2, z: z1 }, { r: 2, z: z2 }, { r: 2, z: z3 }, { r: 2, z: z4 },
+
+             // DÍA 2 (10 partidos)
+             // Ronda 2 (Z5 a Z7)
              { r: 2, z: z5 }, { r: 2, z: z6 }, { r: 2, z: z7 },
+             // Ronda 3 completa (Z1 a Z7)
              { r: 3, z: z1 }, { r: 3, z: z2 }, { r: 3, z: z3 }, { r: 3, z: z4 },
              { r: 3, z: z5 }, { r: 3, z: z6 }, { r: 3, z: z7 }
            ];
