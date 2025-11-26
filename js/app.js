@@ -3546,35 +3546,47 @@ function exportMatchesAsCsv() {
 let rowIndex = 0;
 
 t.matches.forEach((m) => {
-  if (m.isByeMatch) return; // <<--- NO exportar BYE
-
   const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
   const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
 
   const homeLabel = home ? home.shortName : m.homeSeed || "";
   const awayLabel = away ? away.shortName : m.awaySeed || "";
 
-  const field =
-    m.fieldId && fieldById[m.fieldId]
-      ? fieldById[m.fieldId].name
-      : m.fieldId || "";
+  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
 
-  rowIndex++;
-
-  rows.push(
-    [
-      String(rowIndex),
-      m.zone || "",
-      m.date || "",
-      m.time || "",
-      field,
-      homeLabel,
-      awayLabel,
-      m.phase || "",
-      String(m.round || ""),
-      m.code || "",
-    ].join(";")
-  );
+  if (m.isByeMatch) {
+    // Para BYE, exportamos pero con campos vacíos en fecha/hora/cancha
+    rows.push(
+      [
+        "-",           // Nro
+        m.zone || "",
+        "",            // Fecha vacía
+        "",            // Hora vacía  
+        "",            // Cancha vacía
+        homeLabel,
+        awayLabel,
+        m.phase || "",
+        String(m.round || ""),
+        m.code || "",
+      ].join(";")
+    );
+  } else {
+    rowIndex++;
+    rows.push(
+      [
+        String(rowIndex),
+        m.zone || "",
+        m.date || "",
+        m.time || "",
+        field,
+        homeLabel,
+        awayLabel,
+        m.phase || "",
+        String(m.round || ""),
+        m.code || "",
+      ].join(";")
+    );
+  }
 });
 
 
