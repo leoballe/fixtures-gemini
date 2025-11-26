@@ -2214,6 +2214,9 @@ function renderBreaksList() {
 // =====================
 //  STEP 5: GENERAR FIXTURE (CON ANCLAJE ESTRICTO DE DÍAS)
 // =====================
+// =====================
+//  STEP 5: GENERAR FIXTURE (CORREGIDO: FINALES AL FINAL)
+// =====================
 function initFixtureGeneration() {
   const btn = document.getElementById("btn-generate-fixture");
   if (!btn) return;
@@ -2227,7 +2230,6 @@ function initFixtureGeneration() {
       return;
     }
 
-    // --- 1. Configuración y validación de días ---
     const dayTimeMin = document.getElementById("day-time-min").value || t.dayTimeMin || "09:00";
     const dayTimeMax = document.getElementById("day-time-max").value || t.dayTimeMax || "22:00";
     const matchDurationMinutes = Number(document.getElementById("match-duration").value || t.matchDurationMinutes || 60);
@@ -2239,16 +2241,6 @@ function initFixtureGeneration() {
     t.restMinMinutes = restMinMinutes;
 
     ensureDayConfigs(t);
-
-    // Validar que existan suficientes días para el formato Evita
-    const playableDayIndexes = [];
-    (t.dayConfigs || []).forEach((dc, idx) => {
-      if (dc && dc.type !== "off") playableDayIndexes.push(idx);
-    });
-
-    if (t.format.type === "especial-8x3" && playableDayIndexes.length < 3) {
-        alert("ADVERTENCIA: El formato Evita necesita al menos 3 a 5 días de competencia.\nActualmente tenés configurados solo " + playableDayIndexes.length + " días jugables en el Paso 1/4.\nEl fixture se comprimirá y saldrá mal.");
-    }
 
     const scheduleOptions = {
       dateStart: t.dateStart,
@@ -2265,11 +2257,9 @@ function initFixtureGeneration() {
 
     let matchesBase = [];
 
-    // --- 2. Generación de Partidos ---
+    // Generación de partidos
     if (t.format.type === "liga") {
-      matchesBase = generarFixtureLiga(t.teams.map((e) => e.id), {
-        idaVuelta: t.format.liga && t.format.liga.rounds === "ida-vuelta",
-      });
+      matchesBase = generarFixtureLiga(t.teams.map((e) => e.id), { idaVuelta: t.format.liga && t.format.liga.rounds === "ida-vuelta" });
     } else if (t.format.type === "zonas") {
       const zonesMap = {};
       t.teams.forEach((team) => {
@@ -2277,9 +2267,7 @@ function initFixtureGeneration() {
         if (!zonesMap[key]) zonesMap[key] = [];
         zonesMap[key].push(team.id);
       });
-      matchesBase = generarFixtureZonas(zonesMap, {
-        idaVuelta: t.format.liga && t.format.liga.rounds === "ida-vuelta",
-      });
+      matchesBase = generarFixtureZonas(zonesMap, { idaVuelta: t.format.liga && t.format.liga.rounds === "ida-vuelta" });
     } else if (t.format.type === "zonas-playoffs") {
        const zonesMap = {};
        t.teams.forEach((team) => {
@@ -2287,32 +2275,34 @@ function initFixtureGeneration() {
          if (!zonesMap[key]) zonesMap[key] = [];
          zonesMap[key].push(team.id);
        });
-       matchesBase = generarFixtureZonas(zonesMap, { idaVuelta: false }).concat(
-         generarPlayoffsDesdeZonas(t, t.format.eliminacion.type)
-       );
+       matchesBase = generarFixtureZonas(zonesMap, { idaVuelta: false }).concat(generarPlayoffsDesdeZonas(t, t.format.eliminacion.type));
     } else if (t.format.type === "especial-8x3") {
       matchesBase = generarEspecial8x3(t);
       if (!matchesBase || !matchesBase.length) return; 
     } else if (t.format.type === "eliminacion") {
-      matchesBase = generarLlavesEliminacion(t.teams.map((e) => e.id), {
-        type: t.format.eliminacion && t.format.eliminacion.type,
-      });
+      matchesBase = generarLlavesEliminacion(t.teams.map((e) => e.id), { type: t.format.eliminacion && t.format.eliminacion.type });
     }
 
-    // 3. Renumerar IDs
     matchesBase = renumerarPartidosConIdsNumericos(matchesBase);
 
-    // --- 4. ORDENAMIENTO Y ANCLAJE DE DÍAS (EVITA) ---
-    if (
-      t.format.type === "especial-8x3" &&
-      matchesBase.some((m) => (m.phase || "").includes("Fase 1"))
-    ) {
+    // --- ORDENAMIENTO Y ANCLAJE DE DÍAS (EVITA) ---
+    if (t.format.type === "especial-8x3" && matchesBase.some((m) => (m.phase || "").includes("Fase 1"))) {
       const fase1 = matchesBase.filter((m) => (m.phase || "").includes("Fase 1"));
       const otros = matchesBase.filter((m) => !(m.phase || "").includes("Fase 1"));
 
-      // A. ORDENAMIENTO FASE 1 (ZONAS)
+      const playableDayIndexes = [];
+      (t.dayConfigs || []).forEach((dc, idx) => {
+        if (dc && dc.type !== "off") playableDayIndexes.push(idx);
+      });
+
+      // A. FASE 1 (ZONAS)
       let fase1Ordenada = fase1.slice();
-      
+      const ordenarZonaRonda = (a, b) => {
+        const za = a.zone || ""; const zb = b.zone || "";
+        if (za < zb) return -1; if (za > zb) return 1;
+        return (a.round || 0) - (b.round || 0);
+      };
+
       try {
         const zonesSet = new Set();
         const roundsSet = new Set();
@@ -2320,9 +2310,7 @@ function initFixtureGeneration() {
           if (m.zone) zonesSet.add(m.zone);
           if (typeof m.round === "number") roundsSet.add(m.round);
         });
-        const zones = Array.from(zonesSet).sort((a, b) =>
-          ("" + a).localeCompare("" + b, "es", { numeric: true, sensitivity: "base" })
-        );
+        const zones = Array.from(zonesSet).sort((a, b) => ("" + a).localeCompare("" + b, "es", { numeric: true, sensitivity: "base" }));
         const rounds = Array.from(roundsSet).sort((a, b) => a - b);
 
         let splitIndexDia1 = 0;
@@ -2366,14 +2354,12 @@ function initFixtureGeneration() {
            });
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
            const patron = [
-             // DÍA 1 (11 partidos)
-             { r: 1, z: z1 }, { r: 1, z: z2 }, { r: 1, z: z3 }, { r: 1, z: z4 },
-             { r: 1, z: z5 }, { r: 1, z: z6 }, { r: 1, z: z7 },
-             { r: 2, z: z1 }, { r: 2, z: z2 }, { r: 2, z: z3 }, { r: 2, z: z4 },
-             // DÍA 2 (Resto)
-             { r: 2, z: z5 }, { r: 2, z: z6 }, { r: 2, z: z7 },
-             { r: 3, z: z1 }, { r: 3, z: z2 }, { r: 3, z: z3 }, { r: 3, z: z4 },
-             { r: 3, z: z5 }, { r: 3, z: z6 }, { r: 3, z: z7 }
+            { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+            { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, 
+            { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+            { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, 
+            { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+            { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, 
            ];
            splitIndexDia1 = 11;
            const ordered = []; const usados = new Set();
@@ -2384,68 +2370,67 @@ function initFixtureGeneration() {
            fase1.forEach((m) => { if (!usados.has(m.id)) ordered.push(m); });
            fase1Ordenada = ordered;
         } else {
-          // Fallback
-          const ordenarZonaRonda = (a, b) => {
-            const za = a.zone || ""; const zb = b.zone || "";
-            if (za < zb) return -1; if (za > zb) return 1;
-            return (a.round || 0) - (b.round || 0);
-          };
           fase1Ordenada.sort(ordenarZonaRonda);
           splitIndexDia1 = Math.ceil(fase1Ordenada.length / 2);
         }
 
         // B. ORDENAMIENTO FASES FINALES
-        const getZonePriority = (z) => {
-            if (z === "Zona A1") return 1;
-            if (z === "Zona A2") return 2;
-            if (z === "Puestos 9-16") return 3;
-            if (z === "Puestos 17-24") return 4;
-            return 99;
-        };
-
         otros.sort((a, b) => {
-            const aEsFinal = (a.phase === "Puestos 1-8" || a.zone === "Puestos 1-8");
-            const bEsFinal = (b.phase === "Puestos 1-8" || b.zone === "Puestos 1-8");
+            const esFinalA = (a.zone === "Puestos 1-8");
+            const esFinalB = (b.zone === "Puestos 1-8");
             
-            if (aEsFinal && !bEsFinal) return 1;
-            if (!aEsFinal && bEsFinal) return -1;
-            if (aEsFinal && bEsFinal) return (b.homeSeed || "").localeCompare(a.homeSeed || "");
+            // Finales (1-8) siempre al fondo de la lista
+            if (esFinalA && !esFinalB) return 1;
+            if (!esFinalA && esFinalB) return -1;
+            
+            if (esFinalA && esFinalB) {
+               // Ordenar 1°-2° al final
+               return (b.homeSeed || "").localeCompare(a.homeSeed || "");
+            }
 
+            // Resto por Ronda
             const rA = a.round || 0; const rB = b.round || 0;
             if (rA !== rB) return rA - rB;
-
-            const pA = getZonePriority(a.zone); const pB = getZonePriority(b.zone);
-            return pA - pB;
+            
+            return (a.code || "").localeCompare(b.code || "");
         });
 
-        // --- C. ASIGNACIÓN DE DÍAS (ANCLAJE) ---
-        // Obtenemos los índices reales de los días (ej: 0, 1, 2, 3, 4)
+        // --- C. ASIGNACIÓN DE DÍAS (ANCLAJE ESTRICTO) ---
         const idxD1 = playableDayIndexes[0];
         const idxD2 = playableDayIndexes[1] ?? idxD1;
         const idxD3 = playableDayIndexes[2] ?? idxD2;
         const idxD4 = playableDayIndexes[3] ?? idxD3;
         const idxD5 = playableDayIndexes[4] ?? idxD4;
 
-        // 1. FASE 1: Forzar Día 1 y Día 2
+        // Fase 1
         const pDia1 = fase1Ordenada.slice(0, splitIndexDia1);
         const pDia2 = fase1Ordenada.slice(splitIndexDia1);
-
         pDia1.forEach(m => m.preferredDayIndex = idxD1);
         pDia2.forEach(m => m.preferredDayIndex = idxD2);
 
-        // 2. FASE FINAL: Forzar Día 3, 4 y 5 según la Ronda
+        // Fase Final
         otros.forEach(m => {
             const r = m.round || 1;
-            const esFinalisima = (m.phase === "Puestos 1-8" || m.zone === "Puestos 1-8");
-            
-            if (r === 1) {
-                m.preferredDayIndex = idxD3; // Día 3
-            } else if (r === 2) {
-                m.preferredDayIndex = idxD4; // Día 4
-            } else if (r >= 3 || esFinalisima) {
-                m.preferredDayIndex = idxD5; // Día 5
+            // IMPORTANTE: Detectar fase de grupos A1/A2 vs Llaves de eliminación
+            const esGrupoA = (m.zone === "Zona A1" || m.zone === "Zona A2");
+            const esFinalisima = (m.zone === "Puestos 1-8");
+
+            if (esGrupoA) {
+                // Grupos A1/A2 juegan 3 rondas: D3, D4, D5
+                if (r === 1) m.preferredDayIndex = idxD3;
+                else if (r === 2) m.preferredDayIndex = idxD4;
+                else m.preferredDayIndex = idxD5;
+            } else if (esFinalisima) {
+                // Puestos 1-8 SIEMPRE el último día
+                m.preferredDayIndex = idxD5; 
             } else {
-                m.preferredDayIndex = idxD5; // Fallback
+                // Llaves B y C (Puestos 9-24)
+                // Ronda 1 -> Día 3
+                // Ronda 2 -> Día 4
+                // Ronda 3 -> Día 5
+                if (r === 1) m.preferredDayIndex = idxD3;
+                else if (r === 2) m.preferredDayIndex = idxD4;
+                else m.preferredDayIndex = idxD5;
             }
         });
 
@@ -2456,7 +2441,6 @@ function initFixtureGeneration() {
       }
     }
 
-    // 5. Asignar Horarios
     const matches = asignarHorarios(matchesBase, scheduleOptions);
     t.matches = matches;
     t.schedule = t.schedule || {};
