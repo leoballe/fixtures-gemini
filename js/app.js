@@ -3728,91 +3728,89 @@ function exportPreviewAsPdf() {
     let head = [];
     const body = [];
 
-    if (mode === "team") {
-      head = [
-        [
-          "Fecha",
-          "Hora",
-          "Cancha",
-          "Rival",
-          "Rol",
-          "Zona",
-          "Fase / Ronda",
-          "ID",
-        ],
-      ];
+   if (mode === "team") {
+  head = [
+    [
+      "Fecha",
+      "Hora",
+      "Cancha",
+      "Rival",
+      "Rol",
+      "Zona",
+      "Fase / Ronda",
+      "ID",
+    ],
+  ];
 
-      grouped[key].forEach((m) => {
-        const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-        const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-        const homeLabel = home ? home.shortName : m.homeSeed || "?";
-        const awayLabel = away ? away.shortName : m.awaySeed || "?";
-        const field =
-          m.fieldId && fieldById[m.fieldId]
-            ? fieldById[m.fieldId].name
-            : m.fieldId || "";
-        const isHome = m.role === "Local";
-        const rivalLabel = isHome ? awayLabel : homeLabel;
-        const phaseRoundLabel =
-          (m.phase || "") +
-          " (R" +
-          (m.round || "-") +
-          (m.code ? " · " + m.code : "") +
-          ")";
+  grouped[key].forEach((m) => {
+    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+    const homeLabel = home ? home.shortName : m.homeSeed || "?";
+    const awayLabel = away ? away.shortName : m.awaySeed || "?";
+    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+    const isHome = m.role === "Local";
+    const rivalLabel = isHome ? awayLabel : homeLabel;
+    const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-        body.push([
-          m.date || "",
-          m.time || "",
-          field,
-          rivalLabel,
-          m.role || "",
-          m.zone || "",
-          phaseRoundLabel,
-          m.code || "",
-        ]);
-      });
+    body.push([
+      m.date || "",
+      m.time || "",
+      field,
+      rivalLabel,
+      m.role || "",
+      m.zone || "",
+      phaseRoundLabel,
+      m.code || "",
+    ]);
+  });
+} else {
+  head = [
+    [
+      "Fecha",
+      "Hora",
+      "Cancha",
+      "Local",
+      "Visitante",
+      "Zona",
+      "Fase / Ronda",
+      "ID",
+    ],
+  ];
+
+  grouped[key].forEach((m) => {
+    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+    const homeLabel = home ? home.shortName : m.homeSeed || "";
+    const awayLabel = away ? away.shortName : m.awaySeed || "";
+    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+    const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
+
+    // Si es partido BYE, mostramos campos vacíos en fecha/hora/cancha
+    if (m.isByeMatch) {
+      body.push([
+        "",  // Fecha vacía
+        "",  // Hora vacía
+        "",  // Cancha vacía
+        homeLabel,
+        awayLabel,
+        m.zone || "",
+        phaseRoundLabel,
+        m.code || "",
+      ]);
     } else {
-      head = [
-        [
-          "Fecha",
-          "Hora",
-          "Cancha",
-          "Local",
-          "Visitante",
-          "Zona",
-          "Fase / Ronda",
-          "ID",
-        ],
-      ];
-
-      grouped[key].forEach((m) => {
-        const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-        const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-        const homeLabel = home ? home.shortName : m.homeSeed || "";
-        const awayLabel = away ? away.shortName : m.awaySeed || "";
-        const field =
-          m.fieldId && fieldById[m.fieldId]
-            ? fieldById[m.fieldId].name
-            : m.fieldId || "";
-        const phaseRoundLabel =
-          (m.phase || "") +
-          " (R" +
-          (m.round || "-") +
-          (m.code ? " · " + m.code : "") +
-          ")";
-
-        body.push([
-          m.date || "",
-          m.time || "",
-          field,
-          homeLabel,
-          awayLabel,
-          m.zone || "",
-          phaseRoundLabel,
-          m.code || "",
-        ]);
-      });
+      body.push([
+        m.date || "",
+        m.time || "",
+        field,
+        homeLabel,
+        awayLabel,
+        m.zone || "",
+        phaseRoundLabel,
+        m.code || "",
+      ]);
     }
+  });
+}
 
     doc.autoTable({
       startY: 22,
