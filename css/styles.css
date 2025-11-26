@@ -493,3 +493,13 @@ input::placeholder {
     grid-template-columns: 1fr;
   }
 }
+/* Estilos para partidos BYE */
+.bye-match {
+  opacity: 0.6;
+  background-color: rgba(55, 65, 81, 0.3);
+  font-style: italic;
+}
+
+.bye-match:hover {
+  background-color: rgba(55, 65, 81, 0.5);
+}
