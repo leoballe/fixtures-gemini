@@ -3197,58 +3197,45 @@ function renderFixtureResult() {
   const tbody = document.createElement("tbody");
   let rowIndex = 0; // numeración global, sólo partidos reales
 
-  t.matches.forEach((m) => {
-    // No mostramos ni numeramos partidos BYE
-    if (m.isByeMatch) return;
+t.matches.forEach((m) => {
+  const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+  const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
 
-    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+  const homeLabel = home ? home.shortName : m.homeSeed || "?";
+  const awayLabel = away ? away.shortName : m.awaySeed || "?";
 
-    const homeLabel = home ? home.shortName : m.homeSeed || "?";
-    const awayLabel = away ? away.shortName : m.awaySeed || "?";
+  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
 
-    const field =
-      m.fieldId && fieldById[m.fieldId]
-        ? fieldById[m.fieldId].name
-        : m.fieldId || "-";
+  const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    const phaseRoundLabel =
-      (m.phase || "") +
-      " (R" +
-      (m.round || "-") +
-      (m.code ? " · " + m.code : "") +
-      ")";
-
-    const tr = document.createElement("tr");
-    rowIndex++; // sólo se incrementa en partidos no-BYE
-
+  const tr = document.createElement("tr");
+  
+  // Si es partido BYE, mostramos de manera especial
+  if (m.isByeMatch) {
+    tr.classList.add("bye-match"); // Agregamos una clase CSS para estilizar
     tr.innerHTML =
-      "<td>" +
-      rowIndex +
-      "</td>" +
-      "<td>" +
-      (m.zone || "-") +
-      "</td>" +
-      "<td>" +
-      (m.date || "-") +
-      "</td>" +
-      "<td>" +
-      (m.time || "-") +
-      "</td>" +
-      "<td>" +
-      field +
-      "</td>" +
-      "<td>" +
-      homeLabel +
-      " vs " +
-      awayLabel +
-      "</td>" +
-      "<td>" +
-      phaseRoundLabel +
-      "</td>";
+      "<td>-</td>" +  // Sin número de partido
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>-</td>" +  // Sin fecha
+      "<td>-</td>" +  // Sin hora
+      "<td>-</td>" +  // Sin cancha
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>";
+  } else {
+    // Partido normal
+    rowIndex++;
+    tr.innerHTML =
+      "<td>" + rowIndex + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + (m.date || "-") + "</td>" +
+      "<td>" + (m.time || "-") + "</td>" +
+      "<td>" + field + "</td>" +
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>";
+  }
 
-    tbody.appendChild(tr);
-  });
+  tbody.appendChild(tr);
+});
 
   table.appendChild(tbody);
   container.appendChild(table);
@@ -3303,14 +3290,17 @@ function renderExportView(mode) {
     fieldById[f.id] = f;
   });
 
-  // Numeración global de partidos (sin BYE) para usar como ID consistente
-  const matchNumberById = {};
-  let globalIndex = 0;
-  t.matches.forEach((m) => {
-    if (m.isByeMatch) return;
+// Numeración global de partidos (sin BYE) para usar como ID consistente
+const matchNumberById = {};
+let globalIndex = 0;
+t.matches.forEach((m) => {
+  if (m.isByeMatch) {
+    matchNumberById[m.id] = "-"; // BYE no tiene número
+  } else {
     globalIndex++;
     matchNumberById[m.id] = globalIndex;
-  });
+  }
+});
 
   container.innerHTML = "";
 
@@ -3461,61 +3451,54 @@ function renderExportView(mode) {
       const matchNumber =
         matchNumberById[m.id] != null ? matchNumberById[m.id] : "";
 
-      if (mode === "team") {
-        const isHome = m.role === "Local";
-        const rivalLabel = isHome ? awayLabel : homeLabel;
+     if (mode === "team") {
+  const isHome = m.role === "Local";
+  const rivalLabel = isHome ? awayLabel : homeLabel;
 
-        tr.innerHTML =
-          "<td>" +
-          (m.date || "-") +
-          "</td>" +
-          "<td>" +
-          (m.time || "-") +
-          "</td>" +
-          "<td>" +
-          field +
-          "</td>" +
-          "<td>" +
-          rivalLabel +
-          "</td>" +
-          "<td>" +
-          (m.role || "") +
-          "</td>" +
-          "<td>" +
-          (m.zone || "-") +
-          "</td>" +
-          "<td>" +
-          phaseRoundLabel +
-          "</td>" +
-          "<td>" +
-          matchNumber +
-          "</td>";
-      } else {
-        tr.innerHTML =
-          "<td>" +
-          (m.date || "-") +
-          "</td>" +
-          "<td>" +
-          (m.time || "-") +
-          "</td>" +
-          "<td>" +
-          field +
-          "</td>" +
-          "<td>" +
-          homeLabel +
-          " vs " +
-          awayLabel +
-          "</td>" +
-          "<td>" +
-          (m.zone || "-") +
-          "</td>" +
-          "<td>" +
-          phaseRoundLabel +
-          "</td>" +
-          "<td>" +
-          matchNumber +
-          "</td>";
-      }
+  if (m.isByeMatch) {
+    tr.classList.add("bye-match");
+    tr.innerHTML =
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>" + rivalLabel + "</td>" +
+      "<td>" + (m.role || "") + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>" +
+      "<td>-</td>";
+  } else {
+    tr.innerHTML =
+      "<td>" + (m.date || "-") + "</td>" +
+      "<td>" + (m.time || "-") + "</td>" +
+      "<td>" + field + "</td>" +
+      "<td>" + rivalLabel + "</td>" +
+      "<td>" + (m.role || "") + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>" +
+      "<td>" + matchNumber + "</td>";
+  }
+} else {
+  if (m.isByeMatch) {
+    tr.classList.add("bye-match");
+    tr.innerHTML =
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>" +
+      "<td>-</td>";
+  } else {
+    tr.innerHTML =
+      "<td>" + (m.date || "-") + "</td>" +
+      "<td>" + (m.time || "-") + "</td>" +
+      "<td>" + field + "</td>" +
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>" +
+      "<td>" + matchNumber + "</td>";
+  }
+}
 
       tbody.appendChild(tr);
     });
