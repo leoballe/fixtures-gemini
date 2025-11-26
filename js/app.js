@@ -1025,6 +1025,9 @@ function generarLigaSeeds(seedLabels, options) {
 // =====================
 //  FORMATO ESPECIAL 8x3 (20–24 EQUIPOS)
 // =====================
+// =====================
+//  FORMATO ESPECIAL 8x3 (20–24 EQUIPOS) - LÓGICA CORREGIDA
+// =====================
 function generarEspecial8x3(t) {
   const zonesMap = {};
   t.teams.forEach((team) => {
@@ -1045,43 +1048,40 @@ function generarEspecial8x3(t) {
   const allMatches = [];
 
   // --- FASE 1: ZONAS ---
-  const fase1 = [];
   zoneNames.forEach((z) => {
     const ids = zonesMap[z];
     if (!Array.isArray(ids) || ids.length < 2) return;
+    // Zonas de 2 juegan ida y vuelta siempre
     const esZonaDe2 = ids.length === 2;
-    const idaVueltaZona = esZonaDe2 ? true : idaVueltaGlobal; // Zonas de 2 siempre ida y vuelta
-
-    const part = generarFixtureLiga(ids, {
-      idaVuelta: idaVueltaZona,
-      zone: z,
-      phase: "Fase 1 · Zonas",
-    });
-    fase1.push(...part);
+    const idaVueltaZona = esZonaDe2 ? true : idaVueltaGlobal;
+    const part = generarFixtureLiga(ids, { idaVuelta: idaVueltaZona, zone: z, phase: "Fase 1 · Zonas" });
+    allMatches.push(...part);
   });
-  allMatches.push(...fase1);
 
   // --- FASE 2: ZONAS A1 y A2 ---
   let seedsA1 = ["1°1°", "4°1°", "5°1°", "8°1°"];
   let seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
 
+  // Para 20 y 21 equipos, el 8°1° no existe, sube el 1°2°
   if (totalEquipos <= 21) {
-    // Para 20 y 21 equipos: El 1°2° sube a A1
     seedsA1 = ["1°1°", "4°1°", "5°1°", "1°2°"];
     seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
   }
 
   const zonaA1 = generarLigaSeeds(seedsA1, { idaVuelta: idaVueltaGlobal, zone: "Zona A1", phase: "Fase 2 · Zona A1" });
   const zonaA2 = generarLigaSeeds(seedsA2, { idaVuelta: idaVueltaGlobal, zone: "Zona A2", phase: "Fase 2 · Zona A2" });
+  
+  // IMPORTANTE: Pusheamos Fase 2 ANTES que Fase 3
   allMatches.push(...zonaA1, ...zonaA2);
 
-  // --- FASE 3: PUESTOS 1–8 ---
+  // --- FASE 3: PUESTOS 1–8 (FINALES) ---
+  // Se generan aquí para tener IDs consecutivos (33-36 aprox)
   function crearPartidoPosicion(posicion) {
     return {
       id: safeId("m"), code: null, zone: "Puestos 1-8",
       homeTeamId: null, awayTeamId: null,
       homeSeed: posicion + "° Zona A1", awaySeed: posicion + "° Zona A2",
-      round: 1, phase: "Puestos 1-8",
+      round: 1, phase: "Puestos 1-8", // Round 1 de esta fase
       fromHomeResult: null, fromAwayResult: null, date: null, time: null, fieldId: null
     };
   }
@@ -1140,19 +1140,19 @@ function generarEspecial8x3(t) {
   const zone17_24 = "Puestos 17-24";
 
   if (totalEquipos === 20) {
-    // CASO 20 EQUIPOS: Solo quedan 4 equipos (3°3° a 6°3°)
-    // Semifinales directas
-    const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 2, phase17_24, zone17_24); // Semis
-    const m17_2 = crearMatchClasif("P17_2", "4°3°", "5°3°", 2, phase17_24, zone17_24); // Semis
+    // CASO 20 EQUIPOS: Solo hay 4 equipos (3°3° a 6°3°).
+    // Van directo a Semifinales (Ronda 2) para jugar el día 4.
+    const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 2, phase17_24, zone17_24);
+    const m17_2 = crearMatchClasif("P17_2", "4°3°", "5°3°", 2, phase17_24, zone17_24);
 
-    // Finales
+    // Finales (Ronda 3) para jugar el día 5.
     const m17_3 = crearMatchGP_PP("P17_3", m17_1.code, "GP", m17_2.code, "GP", 3, phase17_24, zone17_24); // 17°
     const m17_4 = crearMatchGP_PP("P17_4", m17_1.code, "PP", m17_2.code, "PP", 3, phase17_24, zone17_24); // 19°
 
     allMatches.push(m17_1, m17_2, m17_3, m17_4);
 
   } else if (totalEquipos === 21) {
-    // 21 EQUIPOS
+    // CASO 21 EQUIPOS
     const m17_1 = crearMatchClasif("P17_1", "3°3°", "BYE (3°3°)", 1, phase17_24, zone17_24); m17_1.isByeMatch = true;
     const m17_2 = crearMatchClasif("P17_2", "6°3°", "7°3°", 1, phase17_24, zone17_24);
     const m17_3 = crearMatchClasif("P17_3", "4°3°", "BYE (4°3°)", 1, phase17_24, zone17_24); m17_3.isByeMatch = true;
@@ -1161,7 +1161,6 @@ function generarEspecial8x3(t) {
     const m17_5 = crearMatchGP_PP("P17_5", m17_1.code, "GP", m17_2.code, "GP", 2, phase17_24, zone17_24);
     const m17_6 = crearMatchGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
     
-    // Perdedores (BYE vs Perdedor) -> 21° puesto
     const m17_7 = crearMatchGP_PP("P17_7", m17_1.code, "PP", m17_2.code, "PP", 2, phase17_24, zone17_24); m17_7.isByeMatch = true;
     const m17_8 = crearMatchGP_PP("P17_8", m17_3.code, "PP", m17_4.code, "PP", 2, phase17_24, zone17_24); m17_8.isByeMatch = true;
 
@@ -1172,8 +1171,8 @@ function generarEspecial8x3(t) {
 
     allMatches.push(m17_1, m17_2, m17_3, m17_4, m17_5, m17_6, m17_7, m17_8, m17_9, m17_10, m17_11, m17_12);
 
-  } else if (totalEquipos >= 22) {
-    // 22-24 EQUIPOS (Lógica Estándar con BYEs variables)
+  } else {
+    // CASO 22-24 EQUIPOS
     let m17_1, m17_2, m17_3, m17_4;
     if (totalEquipos === 24) {
         m17_1 = crearMatchClasif("P17_1", "1°3°", "8°3°", 1, phase17_24, zone17_24);
@@ -2209,6 +2208,9 @@ function renderBreaksList() {
 // =====================
 //  STEP 5: GENERAR FIXTURE
 // =====================
+// =====================
+//  STEP 5: GENERAR FIXTURE
+// =====================
 function initFixtureGeneration() {
   const btn = document.getElementById("btn-generate-fixture");
   if (!btn) return;
@@ -2282,9 +2284,10 @@ function initFixtureGeneration() {
       });
     }
 
+    // 3. Renumerar IDs
     matchesBase = renumerarPartidosConIdsNumericos(matchesBase);
 
-    // ORDENAMIENTO CRONOLÓGICO EVITA
+    // 4. LÓGICA DE ORDENAMIENTO CRONOLÓGICO (EVITA)
     if (
       t.format.type === "especial-8x3" &&
       matchesBase.some((m) => (m.phase || "").includes("Fase 1"))
@@ -2297,8 +2300,8 @@ function initFixtureGeneration() {
         if (dc && dc.type !== "off") playableDayIndexes.push(idx);
       });
 
+      // --- ORDENAMIENTO FASE 1 (ZONAS) ---
       let fase1Ordenada = fase1.slice();
-
       const ordenarZonaRonda = (a, b) => {
         const za = a.zone || "";
         const zb = b.zone || "";
@@ -2314,6 +2317,7 @@ function initFixtureGeneration() {
           if (m.zone) zonesSet.add(m.zone);
           if (typeof m.round === "number") roundsSet.add(m.round);
         });
+
         const zones = Array.from(zonesSet).sort((a, b) =>
           ("" + a).localeCompare("" + b, "es", { numeric: true, sensitivity: "base" })
         );
@@ -2333,9 +2337,11 @@ function initFixtureGeneration() {
           });
           const [z1, z2, z3, z4, z5, z6, z7, z8] = zones;
           const patron = [
+            // Día 1
             { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
             { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, { r: 1, z: z8 },
             { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+            // Día 2
             { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
             { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
             { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, { r: 3, z: z8 },
@@ -2368,12 +2374,14 @@ function initFixtureGeneration() {
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
            
            const patron = [
-             { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-             { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 },
-             { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-             { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 },
-             { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-             { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }
+             // DÍA 1 (11 partidos): Toda R1 + R2(Z1-Z4)
+            { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+            { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, 
+            { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+            // Día 2
+            { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
+            { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+            { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, 
            ];
            splitIndexDia1 = 11;
            const ordered = [];
@@ -2394,6 +2402,7 @@ function initFixtureGeneration() {
           splitIndexDia1 = Math.ceil(fase1Ordenada.length / 2);
         }
 
+        // --- ORDENAMIENTO FASES FINALES (Días 3, 4, 5) ---
         const getZonePriority = (z) => {
             if (z === "Zona A1") return 1;
             if (z === "Zona A2") return 2;
@@ -2403,12 +2412,16 @@ function initFixtureGeneration() {
         };
 
         otros.sort((a, b) => {
+            // Excepción: Puestos 1-8 siempre al final
             const aEsFinal = (a.phase === "Puestos 1-8" || a.zone === "Puestos 1-8");
             const bEsFinal = (b.phase === "Puestos 1-8" || b.zone === "Puestos 1-8");
             
             if (aEsFinal && !bEsFinal) return 1;
             if (!aEsFinal && bEsFinal) return -1;
-            if (aEsFinal && bEsFinal) return (b.homeSeed || "").localeCompare(a.homeSeed || "");
+            if (aEsFinal && bEsFinal) {
+               // Orden inverso de seed
+               return (b.homeSeed || "").localeCompare(a.homeSeed || "");
+            }
 
             const rA = a.round || 0;
             const rB = b.round || 0;
@@ -2419,6 +2432,7 @@ function initFixtureGeneration() {
             return pA - pB;
         });
 
+        // --- ASIGNACIÓN DÍAS ---
         const idxDia1 = playableDayIndexes[0] || 0;
         const idxDia2 = playableDayIndexes[1] || idxDia1;
 
@@ -3279,13 +3293,15 @@ function renderTournamentsTable() {
 // ==========================================================
 // VALIDACIÓN ESTRICTA DE ZONAS PARA FORMATO EVITA 8x3
 // ==========================================================
+// ==========================================================
+// VALIDACIÓN DE ZONAS (SOPORTE 20-24 EQUIPOS)
+// ==========================================================
 function validateEvitaZones() {
     const t = appState.currentTournament;
     const teams = t.teams;
     
-    // Rango válido: 20 a 24 equipos
     if (teams.length < 20 || teams.length > 24) {
-        alert("VALIDACIÓN EVITA: El número total de equipos debe ser entre 20 y 24.\nActualmente hay " + teams.length + " equipos cargados.");
+        alert("VALIDACIÓN EVITA: El número total de equipos debe ser entre 20 y 24.\nActualmente hay " + teams.length + ".");
         return false;
     }
     
@@ -3300,11 +3316,11 @@ function validateEvitaZones() {
 
     const zoneNames = Object.keys(zonesMap).sort((a, b) => a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' }));
 
-    // Regla de zonas: 20 y 21 equipos usan 7 zonas. 22-24 usan 8.
+    // 20 y 21 equipos usan 7 zonas. 22-24 usan 8.
     const expectedZones = (teams.length <= 21) ? 7 : 8;
 
     if (zoneNames.length !== expectedZones) {
-        alert("VALIDACIÓN EVITA: Para " + teams.length + " equipos se requieren exactamente " + expectedZones + " zonas.\nSe detectan " + zoneNames.length + " zonas.");
+        alert("VALIDACIÓN EVITA: Para " + teams.length + " equipos se requieren exactamente " + expectedZones + " zonas.");
         return false;
     }
 
@@ -3320,26 +3336,17 @@ function validateEvitaZones() {
     }
 
     if (zonasInvalidas.length > 0) {
-        alert("VALIDACIÓN EVITA: Solo se permiten zonas de 2 o 3 equipos.\nRevisar:\n" + zonasInvalidas.join('\n'));
+        alert("VALIDACIÓN EVITA: Solo se permiten zonas de 2 o 3 equipos.\nError en:\n" + zonasInvalidas.join('\n'));
         return false;
     }
 
     // Validaciones específicas
-    if (teams.length === 24 && zonasCon3 !== 8) {
-        alert("VALIDACIÓN EVITA: 24 equipos requieren 8 zonas de 3."); return false;
-    }
-    if (teams.length === 23 && (zonasCon3 !== 7 || zonasCon2 !== 1)) {
-        alert("VALIDACIÓN EVITA: 23 equipos requieren 7 zonas de 3 y 1 de 2."); return false;
-    }
-    if (teams.length === 22 && (zonasCon3 !== 6 || zonasCon2 !== 2)) {
-        alert("VALIDACIÓN EVITA: 22 equipos requieren 6 zonas de 3 y 2 de 2."); return false;
-    }
-    if (teams.length === 21 && zonasCon3 !== 7) {
-        alert("VALIDACIÓN EVITA: 21 equipos requieren 7 zonas de 3."); return false;
-    }
-    if (teams.length === 20 && (zonasCon3 !== 6 || zonasCon2 !== 1)) {
-        alert("VALIDACIÓN EVITA: 20 equipos requieren 6 zonas de 3 y 1 zona de 2."); return false;
-    }
+    if (teams.length === 24 && zonasCon3 !== 8) { alert("24 equipos requieren 8 zonas de 3."); return false; }
+    if (teams.length === 23 && (zonasCon3 !== 7 || zonasCon2 !== 1)) { alert("23 equipos requieren 7 zonas de 3 y 1 de 2."); return false; }
+    if (teams.length === 22 && (zonasCon3 !== 6 || zonasCon2 !== 2)) { alert("22 equipos requieren 6 zonas de 3 y 2 de 2."); return false; }
+    if (teams.length === 21 && zonasCon3 !== 7) { alert("21 equipos requieren 7 zonas de 3."); return false; }
+    // Caso 20 equipos:
+    if (teams.length === 20 && (zonasCon3 !== 6 || zonasCon2 !== 1)) { alert("20 equipos requieren 6 zonas de 3 y 1 zona de 2."); return false; }
 
     return true;
 }
