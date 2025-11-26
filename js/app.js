@@ -2185,7 +2185,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Iniciar un nuevo torneo (crea el objeto 'currentTournament')
   startNewTournament(); 
   
-  // 3. INICIALIZAR LA NAVEGACIÓN (debe ir después de que el DOM cargó y el estado se preparó)
+  // 3. INICIALIZAR LA NAVEGACIÓN (¡AHORA CON LA LÓGICA INCORPORADA!)
   initNavigation(); 
 
   // 4. Inicializar las secciones
@@ -2212,33 +2212,54 @@ function startNewTournament() {
 }
 
 // =====================
-//  NAVEGACIÓN PASOS
 // =====================
+//  NAVEGACIÓN PASOS (CORREGIDO)
+// =====================
+
+function showStep(n) {
+  const stepItems = document.querySelectorAll(".step-item");
+  const stepPanels = document.querySelectorAll(".step-panel");
+  
+  const stepNum = String(n);
+  
+  stepItems.forEach((li) =>
+    li.classList.toggle("active", li.dataset.step === stepNum)
+  );
+  stepPanels.forEach((panel) =>
+    panel.classList.toggle("active", panel.id === "step-" + stepNum)
+  );
+  
+  // Lógica de refresco para el paso de Reportes/Exportar
+  if (stepNum === "6") {
+    renderExportView(currentExportMode || "zone");
+  }
+}
 
 function initNavigation() {
   const stepItems = document.querySelectorAll(".step-item");
-  const stepPanels = document.querySelectorAll(".step-panel");
 
-  function showStep(n) {
-    stepItems.forEach((li) =>
-      li.classList.toggle("active", li.dataset.step === String(n))
-    );
-    stepPanels.forEach((panel) =>
-      panel.classList.toggle("active", panel.id === "step-" + n)
-    );
-    if (String(n) === "6") {
-      renderExportView(currentExportMode || "zone");
-    }
-  }
-
+  // Navegación por clic en la barra lateral
   stepItems.forEach((li) =>
-    li.addEventListener("click", () => showStep(li.dataset.step))
+    li.addEventListener("click", () => {
+      // Intentamos guardar el estado antes de movernos de paso
+      upsertCurrentTournament();
+      showStep(li.dataset.step);
+    })
   );
+  
+  // Navegación por botones "Continuar" / "Volver"
   document.querySelectorAll("[data-next-step]").forEach((btn) =>
-    btn.addEventListener("click", () => showStep(btn.dataset.nextStep))
+    btn.addEventListener("click", () => {
+      // Intentamos guardar el estado antes de movernos de paso
+      upsertCurrentTournament();
+      showStep(btn.dataset.nextStep);
+    })
   );
   document.querySelectorAll("[data-prev-step]").forEach((btn) =>
-    btn.addEventListener("click", () => showStep(btn.dataset.prevStep))
+    btn.addEventListener("click", () => {
+      upsertCurrentTournament();
+      showStep(btn.dataset.prevStep);
+    })
   );
 
   const btnNew = document.getElementById("btn-new-tournament");
@@ -2254,7 +2275,6 @@ function initNavigation() {
     btnList.addEventListener("click", () => {
       openTournamentsModal();
     });
-
 }
 
 // =====================
