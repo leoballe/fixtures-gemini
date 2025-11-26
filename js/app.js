@@ -2211,6 +2211,9 @@ function renderBreaksList() {
 // =====================
 //  STEP 5: GENERAR FIXTURE
 // =====================
+// =====================
+//  STEP 5: GENERAR FIXTURE (CON ANCLAJE ESTRICTO DE DÍAS)
+// =====================
 function initFixtureGeneration() {
   const btn = document.getElementById("btn-generate-fixture");
   if (!btn) return;
@@ -2224,6 +2227,7 @@ function initFixtureGeneration() {
       return;
     }
 
+    // --- 1. Configuración y validación de días ---
     const dayTimeMin = document.getElementById("day-time-min").value || t.dayTimeMin || "09:00";
     const dayTimeMax = document.getElementById("day-time-max").value || t.dayTimeMax || "22:00";
     const matchDurationMinutes = Number(document.getElementById("match-duration").value || t.matchDurationMinutes || 60);
@@ -2235,6 +2239,16 @@ function initFixtureGeneration() {
     t.restMinMinutes = restMinMinutes;
 
     ensureDayConfigs(t);
+
+    // Validar que existan suficientes días para el formato Evita
+    const playableDayIndexes = [];
+    (t.dayConfigs || []).forEach((dc, idx) => {
+      if (dc && dc.type !== "off") playableDayIndexes.push(idx);
+    });
+
+    if (t.format.type === "especial-8x3" && playableDayIndexes.length < 3) {
+        alert("ADVERTENCIA: El formato Evita necesita al menos 3 a 5 días de competencia.\nActualmente tenés configurados solo " + playableDayIndexes.length + " días jugables en el Paso 1/4.\nEl fixture se comprimirá y saldrá mal.");
+    }
 
     const scheduleOptions = {
       dateStart: t.dateStart,
@@ -2251,6 +2265,7 @@ function initFixtureGeneration() {
 
     let matchesBase = [];
 
+    // --- 2. Generación de Partidos ---
     if (t.format.type === "liga") {
       matchesBase = generarFixtureLiga(t.teams.map((e) => e.id), {
         idaVuelta: t.format.liga && t.format.liga.rounds === "ida-vuelta",
@@ -2287,7 +2302,7 @@ function initFixtureGeneration() {
     // 3. Renumerar IDs
     matchesBase = renumerarPartidosConIdsNumericos(matchesBase);
 
-    // 4. LÓGICA DE ORDENAMIENTO CRONOLÓGICO (EVITA)
+    // --- 4. ORDENAMIENTO Y ANCLAJE DE DÍAS (EVITA) ---
     if (
       t.format.type === "especial-8x3" &&
       matchesBase.some((m) => (m.phase || "").includes("Fase 1"))
@@ -2295,21 +2310,9 @@ function initFixtureGeneration() {
       const fase1 = matchesBase.filter((m) => (m.phase || "").includes("Fase 1"));
       const otros = matchesBase.filter((m) => !(m.phase || "").includes("Fase 1"));
 
-      const playableDayIndexes = [];
-      (t.dayConfigs || []).forEach((dc, idx) => {
-        if (dc && dc.type !== "off") playableDayIndexes.push(idx);
-      });
-
-      // --- ORDENAMIENTO FASE 1 (ZONAS) ---
+      // A. ORDENAMIENTO FASE 1 (ZONAS)
       let fase1Ordenada = fase1.slice();
-      const ordenarZonaRonda = (a, b) => {
-        const za = a.zone || "";
-        const zb = b.zone || "";
-        if (za < zb) return -1;
-        if (za > zb) return 1;
-        return (a.round || 0) - (b.round || 0);
-      };
-
+      
       try {
         const zonesSet = new Set();
         const roundsSet = new Set();
@@ -2317,7 +2320,6 @@ function initFixtureGeneration() {
           if (m.zone) zonesSet.add(m.zone);
           if (typeof m.round === "number") roundsSet.add(m.round);
         });
-
         const zones = Array.from(zonesSet).sort((a, b) =>
           ("" + a).localeCompare("" + b, "es", { numeric: true, sensitivity: "base" })
         );
@@ -2325,84 +2327,74 @@ function initFixtureGeneration() {
 
         let splitIndexDia1 = 0;
 
-        // CASO 22-24 EQUIPOS (8 ZONAS)
+        // Patrón 8 Zonas (22-24 Eq)
         if (zones.length === 8 && rounds.length >= 3) {
           const zoneRoundMap = {};
           fase1.forEach((m) => {
-            const z = m.zone || "";
-            const r = m.round || 1;
+            const z = m.zone || ""; const r = m.round || 1;
             if (!zoneRoundMap[z]) zoneRoundMap[z] = {};
             if (!zoneRoundMap[z][r]) zoneRoundMap[z][r] = [];
             zoneRoundMap[z][r].push(m);
           });
           const [z1, z2, z3, z4, z5, z6, z7, z8] = zones;
           const patron = [
-            // Día 1
             { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
             { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, { r: 1, z: z8 },
             { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-            // Día 2
             { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
             { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
             { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, { r: 3, z: z8 },
           ];
           splitIndexDia1 = 12;
-          const ordered = [];
-          const usados = new Set();
+          const ordered = []; const usados = new Set();
           patron.forEach(({ r, z }) => {
             const lista = zoneRoundMap[z] && zoneRoundMap[z][r] ? zoneRoundMap[z][r] : null;
-            if (lista && lista.length) {
-              const m = lista.shift();
-              ordered.push(m);
-              if (m.id != null) usados.add(m.id);
-            }
+            if (lista && lista.length) { const m = lista.shift(); ordered.push(m); if (m.id) usados.add(m.id); }
           });
-          fase1.forEach((m) => { if (m.id == null || !usados.has(m.id)) ordered.push(m); });
+          fase1.forEach((m) => { if (!usados.has(m.id)) ordered.push(m); });
           fase1Ordenada = ordered;
 
         } 
-        // CASO 20-21 EQUIPOS (7 ZONAS)
-        else if (zones.length === 7 && rounds.length >= 2) {
+        // Patrón 7 Zonas (20-21 Eq)
+        else if (zones.length === 7) {
            const zoneRoundMap = {};
            fase1.forEach((m) => {
-             const z = m.zone || "";
-             const r = m.round || 1;
+             const z = m.zone || ""; const r = m.round || 1;
              if (!zoneRoundMap[z]) zoneRoundMap[z] = {};
              if (!zoneRoundMap[z][r]) zoneRoundMap[z][r] = [];
              zoneRoundMap[z][r].push(m);
            });
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
-           
            const patron = [
-             // DÍA 1 (11 partidos): Toda R1 + R2(Z1-Z4)
-            { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-            { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, 
-            { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-            // Día 2
-            { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
-            { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-            { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, 
+             // DÍA 1 (11 partidos)
+             { r: 1, z: z1 }, { r: 1, z: z2 }, { r: 1, z: z3 }, { r: 1, z: z4 },
+             { r: 1, z: z5 }, { r: 1, z: z6 }, { r: 1, z: z7 },
+             { r: 2, z: z1 }, { r: 2, z: z2 }, { r: 2, z: z3 }, { r: 2, z: z4 },
+             // DÍA 2 (Resto)
+             { r: 2, z: z5 }, { r: 2, z: z6 }, { r: 2, z: z7 },
+             { r: 3, z: z1 }, { r: 3, z: z2 }, { r: 3, z: z3 }, { r: 3, z: z4 },
+             { r: 3, z: z5 }, { r: 3, z: z6 }, { r: 3, z: z7 }
            ];
            splitIndexDia1 = 11;
-           const ordered = [];
-           const usados = new Set();
+           const ordered = []; const usados = new Set();
            patron.forEach(({ r, z }) => {
              const lista = zoneRoundMap[z] && zoneRoundMap[z][r] ? zoneRoundMap[z][r] : null;
-             if (lista && lista.length) {
-               const m = lista.shift();
-               ordered.push(m);
-               if (m.id != null) usados.add(m.id);
-             }
+             if (lista && lista.length) { const m = lista.shift(); ordered.push(m); if (m.id) usados.add(m.id); }
            });
-           fase1.forEach((m) => { if (m.id == null || !usados.has(m.id)) ordered.push(m); });
+           fase1.forEach((m) => { if (!usados.has(m.id)) ordered.push(m); });
            fase1Ordenada = ordered;
-
         } else {
+          // Fallback
+          const ordenarZonaRonda = (a, b) => {
+            const za = a.zone || ""; const zb = b.zone || "";
+            if (za < zb) return -1; if (za > zb) return 1;
+            return (a.round || 0) - (b.round || 0);
+          };
           fase1Ordenada.sort(ordenarZonaRonda);
           splitIndexDia1 = Math.ceil(fase1Ordenada.length / 2);
         }
 
-        // --- ORDENAMIENTO FASES FINALES (Días 3, 4, 5) ---
+        // B. ORDENAMIENTO FASES FINALES
         const getZonePriority = (z) => {
             if (z === "Zona A1") return 1;
             if (z === "Zona A2") return 2;
@@ -2412,42 +2404,50 @@ function initFixtureGeneration() {
         };
 
         otros.sort((a, b) => {
-            // Excepción: Puestos 1-8 siempre al final
             const aEsFinal = (a.phase === "Puestos 1-8" || a.zone === "Puestos 1-8");
             const bEsFinal = (b.phase === "Puestos 1-8" || b.zone === "Puestos 1-8");
             
             if (aEsFinal && !bEsFinal) return 1;
             if (!aEsFinal && bEsFinal) return -1;
-            if (aEsFinal && bEsFinal) {
-               // Orden inverso de seed
-               return (b.homeSeed || "").localeCompare(a.homeSeed || "");
-            }
+            if (aEsFinal && bEsFinal) return (b.homeSeed || "").localeCompare(a.homeSeed || "");
 
-            const rA = a.round || 0;
-            const rB = b.round || 0;
+            const rA = a.round || 0; const rB = b.round || 0;
             if (rA !== rB) return rA - rB;
 
-            const pA = getZonePriority(a.zone);
-            const pB = getZonePriority(b.zone);
+            const pA = getZonePriority(a.zone); const pB = getZonePriority(b.zone);
             return pA - pB;
         });
 
-        // --- ASIGNACIÓN DÍAS ---
-        const idxDia1 = playableDayIndexes[0] || 0;
-        const idxDia2 = playableDayIndexes[1] || idxDia1;
+        // --- C. ASIGNACIÓN DE DÍAS (ANCLAJE) ---
+        // Obtenemos los índices reales de los días (ej: 0, 1, 2, 3, 4)
+        const idxD1 = playableDayIndexes[0];
+        const idxD2 = playableDayIndexes[1] ?? idxD1;
+        const idxD3 = playableDayIndexes[2] ?? idxD2;
+        const idxD4 = playableDayIndexes[3] ?? idxD3;
+        const idxD5 = playableDayIndexes[4] ?? idxD4;
 
+        // 1. FASE 1: Forzar Día 1 y Día 2
         const pDia1 = fase1Ordenada.slice(0, splitIndexDia1);
         const pDia2 = fase1Ordenada.slice(splitIndexDia1);
 
-        pDia1.forEach(m => m.preferredDayIndex = idxDia1);
-        pDia2.forEach(m => m.preferredDayIndex = idxDia2);
+        pDia1.forEach(m => m.preferredDayIndex = idxD1);
+        pDia2.forEach(m => m.preferredDayIndex = idxD2);
 
-        if (playableDayIndexes.length > 2) {
-          const idxDia3 = playableDayIndexes[2];
-          otros.forEach(m => m.minDayIndex = idxDia3);
-        } else if (playableDayIndexes.length === 2) {
-           otros.forEach(m => m.minDayIndex = idxDia2);
-        }
+        // 2. FASE FINAL: Forzar Día 3, 4 y 5 según la Ronda
+        otros.forEach(m => {
+            const r = m.round || 1;
+            const esFinalisima = (m.phase === "Puestos 1-8" || m.zone === "Puestos 1-8");
+            
+            if (r === 1) {
+                m.preferredDayIndex = idxD3; // Día 3
+            } else if (r === 2) {
+                m.preferredDayIndex = idxD4; // Día 4
+            } else if (r >= 3 || esFinalisima) {
+                m.preferredDayIndex = idxD5; // Día 5
+            } else {
+                m.preferredDayIndex = idxD5; // Fallback
+            }
+        });
 
         matchesBase = [].concat(pDia1, pDia2, otros);
 
@@ -2456,6 +2456,7 @@ function initFixtureGeneration() {
       }
     }
 
+    // 5. Asignar Horarios
     const matches = asignarHorarios(matchesBase, scheduleOptions);
     t.matches = matches;
     t.schedule = t.schedule || {};
