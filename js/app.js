@@ -2510,7 +2510,7 @@ if (
     if (dc && dc.type !== "off") playableDayIndexes.push(idx);
   });
 
-  // --- Reordenar Fase 1 según patrón EVITA ---
+// --- Reordenar Fase 1 según patrón EVITA ---
   let fase1Ordenada = fase1.slice();
 
   const ordenarZonaRonda = (a, b) => {
@@ -2540,10 +2540,12 @@ if (
     );
     const rounds = Array.from(roundsSet).sort((a, b) => a - b);
 
-    // Solo aplicamos el patrón si tenemos realmente 8 zonas y 3 rondas
-    if (zones.length === 8 && rounds.length >= 3) {
-      const zoneRoundMap = {};
+    // --- LÓGICA DE ORDENAMIENTO (PATRONES POR DÍA) ---
+    let splitIndexDia1 = 0; // Punto de corte para separar Día 1 de Día 2
 
+    if (zones.length === 8 && rounds.length >= 3) {
+      // CASO 24 EQUIPOS (8 ZONAS): Patrón original
+      const zoneRoundMap = {};
       fase1.forEach((m) => {
         const z = m.zone || "";
         const r = m.round || 1;
@@ -2556,75 +2558,97 @@ if (
 
       const patron = [
         // Día 1
-        { r: 1, z: z1 },
-        { r: 1, z: z3 },
-        { r: 1, z: z5 },
-        { r: 1, z: z7 },
-        { r: 1, z: z2 },
-        { r: 1, z: z4 },
-        { r: 1, z: z6 },
-        { r: 1, z: z8 },
-        { r: 2, z: z1 },
-        { r: 2, z: z3 },
-        { r: 2, z: z5 },
-        { r: 2, z: z7 },
+        { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+        { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, { r: 1, z: z8 },
+        { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
         // Día 2
-        { r: 2, z: z2 },
-        { r: 2, z: z4 },
-        { r: 2, z: z6 },
-        { r: 2, z: z8 },
-        { r: 3, z: z1 },
-        { r: 3, z: z3 },
-        { r: 3, z: z5 },
-        { r: 3, z: z7 },
-        { r: 3, z: z2 },
-        { r: 3, z: z4 },
-        { r: 3, z: z6 },
-        { r: 3, z: z8 },
+        { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
+        { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+        { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, { r: 3, z: z8 },
       ];
+
+      splitIndexDia1 = 12; // Los primeros 12 partidos van al Día 1
 
       const usados = new Set();
       const ordered = [];
-
       patron.forEach(({ r, z }) => {
-        const lista =
-          zoneRoundMap[z] && zoneRoundMap[z][r]
-            ? zoneRoundMap[z][r]
-            : null;
+        const lista = zoneRoundMap[z] && zoneRoundMap[z][r] ? zoneRoundMap[z][r] : null;
         if (lista && lista.length) {
           const m = lista.shift();
           ordered.push(m);
           if (m.id != null) usados.add(m.id);
         }
       });
-
-      // Por seguridad, si quedara algún partido de Fase 1 sin ubicar, lo agregamos al final
+      // Agregar sobrantes si los hubiera
       fase1.forEach((m) => {
-        if (m.id == null || !usados.has(m.id)) {
-          ordered.push(m);
-        }
+        if (m.id == null || !usados.has(m.id)) ordered.push(m);
+      });
+      fase1Ordenada = ordered;
+
+    } else if (zones.length === 7 && rounds.length >= 3) {
+      // CASO 21 EQUIPOS (7 ZONAS): Patrón nuevo solicitado
+      const zoneRoundMap = {};
+      fase1.forEach((m) => {
+        const z = m.zone || "";
+        const r = m.round || 1;
+        if (!zoneRoundMap[z]) zoneRoundMap[z] = {};
+        if (!zoneRoundMap[z][r]) zoneRoundMap[z][r] = [];
+        zoneRoundMap[z][r].push(m);
       });
 
+      const [z1, z2, z3, z4, z5, z6, z7] = zones;
+
+      const patron = [
+        // --- DÍA 1 (11 partidos) ---
+        // Ronda 1 completa (Zonas 1 a 7)
+        { r: 1, z: z1 }, { r: 1, z: z2 }, { r: 1, z: z3 }, { r: 1, z: z4 }, 
+        { r: 1, z: z5 }, { r: 1, z: z6 }, { r: 1, z: z7 },
+        // Ronda 2 (Primeras 4 zonas: 1 a 4)
+        { r: 2, z: z1 }, { r: 2, z: z2 }, { r: 2, z: z3 }, { r: 2, z: z4 },
+
+        // --- DÍA 2 (10 partidos) ---
+        // Ronda 2 (Restantes: 5 a 7)
+        { r: 2, z: z5 }, { r: 2, z: z6 }, { r: 2, z: z7 },
+        // Ronda 3 completa (Zonas 1 a 7)
+        { r: 3, z: z1 }, { r: 3, z: z2 }, { r: 3, z: z3 }, { r: 3, z: z4 }, 
+        { r: 3, z: z5 }, { r: 3, z: z6 }, { r: 3, z: z7 }
+      ];
+
+      splitIndexDia1 = 11; // 7 (R1) + 4 (R2 parcial) = 11 partidos el Día 1
+
+      const usados = new Set();
+      const ordered = [];
+      patron.forEach(({ r, z }) => {
+        const lista = zoneRoundMap[z] && zoneRoundMap[z][r] ? zoneRoundMap[z][r] : null;
+        if (lista && lista.length) {
+          const m = lista.shift();
+          ordered.push(m);
+          if (m.id != null) usados.add(m.id);
+        }
+      });
+      fase1.forEach((m) => {
+        if (m.id == null || !usados.has(m.id)) ordered.push(m);
+      });
       fase1Ordenada = ordered;
+
     } else {
-      // Fallback: el viejo criterio zona+ronda
+      // Fallback genérico
       fase1Ordenada.sort(ordenarZonaRonda);
+      splitIndexDia1 = Math.ceil(fase1Ordenada.length / 2);
     }
   } catch (e) {
-    console.warn("No se pudo aplicar patrón especial Fase 1 (EVITA 8x3):", e);
+    console.warn("No se pudo aplicar patrón especial Fase 1:", e);
     fase1Ordenada = fase1.slice().sort(ordenarZonaRonda);
+    splitIndexDia1 = Math.ceil(fase1Ordenada.length / 2);
   }
 
   // Elegimos índices reales para los días de zonas
-  const idxDiaZonas1 =
-    playableDayIndexes.length > 0 ? playableDayIndexes[0] : 0;
-  const idxDiaZonas2 =
-    playableDayIndexes.length > 1 ? playableDayIndexes[1] : idxDiaZonas1;
+  const idxDiaZonas1 = playableDayIndexes.length > 0 ? playableDayIndexes[0] : 0;
+  const idxDiaZonas2 = playableDayIndexes.length > 1 ? playableDayIndexes[1] : idxDiaZonas1;
 
-  // Mitad y mitad: primeros 12 partidos -> Día 1, siguientes 12 -> Día 2
-  const mitad = Math.ceil(fase1Ordenada.length / 2);
-  const fase1_dia1 = fase1Ordenada.slice(0, mitad);
-  const fase1_dia2 = fase1Ordenada.slice(mitad);
+  // Corte exacto según el patrón definido arriba
+  const fase1_dia1 = fase1Ordenada.slice(0, splitIndexDia1);
+  const fase1_dia2 = fase1Ordenada.slice(splitIndexDia1);
 
   // Día preferido para el scheduler
   fase1_dia1.forEach((m) => (m.preferredDayIndex = idxDiaZonas1));
