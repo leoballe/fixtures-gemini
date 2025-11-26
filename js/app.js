@@ -1482,22 +1482,32 @@ function asignarHorarios(matches, options = {}) {
 //  RENUMERAR PARTIDOS CON IDs NUMÉRICOS
 // =====================
 
+// =====================
+//  RENUMERAR PARTIDOS (LÓGICA CORREGIDA: MAPEO DE REFERENCIAS)
+// =====================
+
 function renumerarPartidosConIdsNumericos(matches) {
-  const codeMap = {};
+  const codeMap = {}; // Mapa: CódigoViejo -> NuevoNúmero
+  let counter = 0;
 
-  // 1) Asignar nuevo código numérico a TODOS los partidos
-  for (let i = 0; i < matches.length; i++) {
-    const m = matches[i];
-    const newCode = String(i + 1); // "1", "2", "3", ...
-    const oldCode = m.code || null;
-
-    if (oldCode) {
-      codeMap[oldCode] = newCode; // P1 -> 5, etc.
+  // 1. Primero asignamos número SÓLO a los partidos que se juegan (No BYE)
+  matches.forEach((m) => {
+    const oldCode = m.code; // Guardamos el código interno (ej: "P9_1")
+    
+    if (!m.isByeMatch) {
+      counter++;
+      const newCode = String(counter);
+      m.code = newCode;       // Asignamos el nuevo ID (ej: "41")
+      if (oldCode) {
+        codeMap[oldCode] = newCode; // Guardamos la relación: P9_1 es ahora 41
+      }
+    } else {
+      // Si es BYE, no le ponemos número visual, pero guardamos referencia si es necesario
+      // Opcional: m.code = "BYE"; 
     }
-    m.code = newCode;
-  }
+  });
 
-  // 2) Actualizar referencias GP/PP y from*MatchCode que usaban los códigos viejos
+  // 2. Ahora actualizamos los textos "GP X" / "PP X" en todos los partidos
   matches.forEach((m) => {
     if (m.homeSeed) {
       m.homeSeed = reemplazarCodigoEnSeed(m.homeSeed, codeMap);
@@ -1506,6 +1516,7 @@ function renumerarPartidosConIdsNumericos(matches) {
       m.awaySeed = reemplazarCodigoEnSeed(m.awaySeed, codeMap);
     }
 
+    // Actualizamos también las referencias internas
     if (m.fromHomeMatchCode && codeMap[m.fromHomeMatchCode]) {
       m.fromHomeMatchCode = codeMap[m.fromHomeMatchCode];
     }
@@ -1518,17 +1529,30 @@ function renumerarPartidosConIdsNumericos(matches) {
 }
 
 function reemplazarCodigoEnSeed(seedLabel, codeMap) {
-  // Solo tocamos cosas tipo "GP P1", "PP P3", etc.
+  if (!seedLabel) return seedLabel;
+
+  // Buscamos patrones como "GP P9_1", "PP P17_2", etc.
+  // Separamos por espacio para encontrar la referencia
   const parts = seedLabel.split(" ");
-  if (
-    parts.length === 2 &&
-    (parts[0] === "GP" || parts[0] === "PP")
-  ) {
-    const oldCode = parts[1];
-    const newCode = codeMap[oldCode] || oldCode;
-    return parts[0] + " " + newCode;
+  
+  // Si empieza con GP o PP y tiene un código
+  if (parts.length >= 2 && (parts[0] === "GP" || parts[0] === "PP")) {
+    const oldRef = parts[1]; // El código viejo (ej: "P9_1")
+    
+    // Si ese código viejo tiene un número nuevo asignado en el mapa...
+    if (codeMap[oldRef]) {
+      // ...reemplazamos el texto. Ej: "GP 41"
+      return parts[0] + " " + codeMap[oldRef];
+    } else {
+      // Si el partido de referencia era un BYE (no tiene número),
+      // idealmente deberíamos mostrar el equipo original, pero por ahora
+      // dejamos el texto o ponemos algo genérico para no romper.
+      // (En el caso de 21 equipos, los cruces están diseñados para que esto no quede visible).
+      return seedLabel; 
+    }
   }
-  return seedLabel; // "1° A", "2° B", etc. se dejan igual
+  
+  return seedLabel;
 }
 
 // =====================
