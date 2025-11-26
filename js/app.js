@@ -2174,32 +2174,21 @@ function reemplazarCodigoEnSeed(seedLabel, codeMap) {
 //  INICIALIZACIÓN GENERAL
 // =====================
 
-// =====================
-//  INICIALIZACIÓN GENERAL
-// =====================
-
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Cargar datos guardados del navegador
   loadTournamentsFromLocalStorage();
-  
-  // 2. Iniciar un nuevo torneo (crea el objeto 'currentTournament')
-  startNewTournament(); 
-  
-  // 3. INICIALIZAR LA NAVEGACIÓN (¡AHORA CON LA LÓGICA INCORPORADA!)
-  initNavigation(); 
-
-  // 4. Inicializar las secciones
+  startNewTournament();
+  initNavigation();
   initStep1();
-  initScheduleDaysUI(); 
+  initScheduleDaysUI(); // NUEVO: inicializa la tabla de días
   initTeamsSection();
   initFieldsSection();
   initBreaksSection();
   initFormatSection();
   initFixtureGeneration();
   initReportsAndExport();
-  initTournamentsModal(); 
+  initTournamentsModal(); // NUEVO
+
 });
-// ... (el resto del archivo debe permanecer igual)
 
 function startNewTournament() {
   appState.currentTournament = createEmptyTournament();
@@ -2212,54 +2201,33 @@ function startNewTournament() {
 }
 
 // =====================
+//  NAVEGACIÓN PASOS
 // =====================
-//  NAVEGACIÓN PASOS (CORREGIDO)
-// =====================
-
-function showStep(n) {
-  const stepItems = document.querySelectorAll(".step-item");
-  const stepPanels = document.querySelectorAll(".step-panel");
-  
-  const stepNum = String(n);
-  
-  stepItems.forEach((li) =>
-    li.classList.toggle("active", li.dataset.step === stepNum)
-  );
-  stepPanels.forEach((panel) =>
-    panel.classList.toggle("active", panel.id === "step-" + stepNum)
-  );
-  
-  // Lógica de refresco para el paso de Reportes/Exportar
-  if (stepNum === "6") {
-    renderExportView(currentExportMode || "zone");
-  }
-}
 
 function initNavigation() {
   const stepItems = document.querySelectorAll(".step-item");
+  const stepPanels = document.querySelectorAll(".step-panel");
 
-  // Navegación por clic en la barra lateral
+  function showStep(n) {
+    stepItems.forEach((li) =>
+      li.classList.toggle("active", li.dataset.step === String(n))
+    );
+    stepPanels.forEach((panel) =>
+      panel.classList.toggle("active", panel.id === "step-" + n)
+    );
+    if (String(n) === "6") {
+      renderExportView(currentExportMode || "zone");
+    }
+  }
+
   stepItems.forEach((li) =>
-    li.addEventListener("click", () => {
-      // Intentamos guardar el estado antes de movernos de paso
-      upsertCurrentTournament();
-      showStep(li.dataset.step);
-    })
+    li.addEventListener("click", () => showStep(li.dataset.step))
   );
-  
-  // Navegación por botones "Continuar" / "Volver"
   document.querySelectorAll("[data-next-step]").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      // Intentamos guardar el estado antes de movernos de paso
-      upsertCurrentTournament();
-      showStep(btn.dataset.nextStep);
-    })
+    btn.addEventListener("click", () => showStep(btn.dataset.nextStep))
   );
   document.querySelectorAll("[data-prev-step]").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      upsertCurrentTournament();
-      showStep(btn.dataset.prevStep);
-    })
+    btn.addEventListener("click", () => showStep(btn.dataset.prevStep))
   );
 
   const btnNew = document.getElementById("btn-new-tournament");
@@ -2275,6 +2243,7 @@ function initNavigation() {
     btnList.addEventListener("click", () => {
       openTournamentsModal();
     });
+
 }
 
 // =====================
@@ -2282,37 +2251,22 @@ function initNavigation() {
 // =====================
 
 function initStep1() {
-  const inputIds = ["t-name", "t-category", "t-date-start", "t-date-end", "t-storage-mode"];
-  
-  const updateTournamentData = () => {
-    const t = appState.currentTournament;
-    if (!t) return;
-
-    // 1. Actualizar el estado del torneo con los nuevos valores
-    t.name = document.getElementById("t-name").value.trim();
-    t.category = document.getElementById("t-category").value.trim();
-    t.dateStart = document.getElementById("t-date-start").value;
-    t.dateEnd = document.getElementById("t-date-end").value;
-    t.storageMode = document.getElementById("t-storage-mode").value;
-
-    // 2. Si las fechas cambiaron, asegurar que los días (Día 1, Día 2, etc.) se generen
-    ensureDayConfigs(t);
-    
-    // 3. Guardar el torneo
-    upsertCurrentTournament();
-    
-    // 4. Refrescar la tabla de días en el Paso 4, en caso de que el usuario avance
-    renderDayConfigs();
-    renderFieldDaysMatrix();
-  };
-
-  inputIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("change", updateTournamentData);
-    // Agregamos un listener de 'input' para campos de texto/nombre
-    el.addEventListener("input", updateTournamentData); 
-  }); // <--- Cierre de forEach correcto
+  ["t-name", "t-category", "t-date-start", "t-date-end", "t-storage-mode"].forEach(
+    (id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", () => {
+        const t = appState.currentTournament;
+        if (!t) return;
+        t.name = document.getElementById("t-name").value.trim();
+        t.category = document.getElementById("t-category").value.trim();
+        t.dateStart = document.getElementById("t-date-start").value;
+        t.dateEnd = document.getElementById("t-date-end").value;
+        t.storageMode = document.getElementById("t-storage-mode").value;
+        upsertCurrentTournament();
+      });
+    }
+  );
 }
 
 function syncUIFromState_step1() {
@@ -2495,29 +2449,73 @@ function initFormatSection() {
   const avoidFirstSlot = document.getElementById("avoid-first-slot-streak");
   const avoidLastSlot = document.getElementById("avoid-last-slot-streak");
 
-function refreshFormatPanels(typeValue) {
+  function refreshFormatPanels(typeValue) {
     const type = typeValue || (formatSelect ? formatSelect.value : "liga");
     const ligaPanel = document.getElementById("format-liga-options");
     const zonasPanel = document.getElementById("format-zonas-options");
     const elimPanel = document.getElementById("format-elim-options");
 
-    // LÓGICA DEPURADA: Solo mostramos el panel de opciones de Liga/Rondas
-    // porque el formato 'especial-8x3' lo usa para definir si va "ida" o "ida-vuelta".
-    const showLigaOptions =
-      type === "liga" || type === "zonas" || type === "especial-8x3";
-    
-    // Ocultamos el resto por ser innecesario para el formato EVITA.
-
     if (ligaPanel) {
-      ligaPanel.style.display = showLigaOptions ? "block" : "none";
+      ligaPanel.style.display =
+        type === "liga" || type === "especial-8x3" ? "block" : "none";
     }
     if (zonasPanel) {
-      zonasPanel.style.display = "none";
+      zonasPanel.style.display =
+        type === "zonas" || type === "zonas-playoffs" ? "block" : "none";
     }
     if (elimPanel) {
-      elimPanel.style.display = "none";
+      elimPanel.style.display =
+        type === "eliminacion" || type === "zonas-playoffs" ? "block" : "none";
     }
+  }
+
+  function syncFromState() {
+    const t = appState.currentTournament;
+    if (!t) return;
+
+    const fmt = t.format || {};
+
+    if (formatSelect) {
+      formatSelect.value = fmt.type || "liga";
     }
+    if (ligaRounds) {
+      ligaRounds.value =
+        fmt.liga && fmt.liga.rounds ? fmt.liga.rounds : "ida";
+    }
+    if (zonasQualifiers) {
+      const val =
+        fmt.zonas && typeof fmt.zonas.qualifiersPerZone === "number"
+          ? fmt.zonas.qualifiersPerZone
+          : 2;
+      zonasQualifiers.value = String(val);
+    }
+    if (zonasBestPlaces) {
+      zonasBestPlaces.value =
+        (fmt.zonas && fmt.zonas.bestPlacesMode) || "none";
+    }
+    if (elimType) {
+      elimType.value =
+        (fmt.eliminacion && fmt.eliminacion.type) || "simple";
+    }
+    if (avoidSameProvince) {
+      avoidSameProvince.checked =
+        fmt.restrictions && !!fmt.restrictions.avoidSameProvince;
+    }
+    if (avoidSameClub) {
+      avoidSameClub.checked =
+        fmt.restrictions && !!fmt.restrictions.avoidSameClub;
+    }
+    if (avoidFirstSlot) {
+      avoidFirstSlot.checked =
+        fmt.restrictions && !!fmt.restrictions.avoidFirstSlotStreak;
+    }
+    if (avoidLastSlot) {
+      avoidLastSlot.checked =
+        fmt.restrictions && !!fmt.restrictions.avoidLastSlotStreak;
+    }
+
+    refreshFormatPanels(fmt.type || "liga");
+  }
 
   function updateFormat() {
     const t = appState.currentTournament;
@@ -2733,57 +2731,27 @@ function initFieldsSection() {
       document.getElementById("field-max-matches").value = "";
     });
 
- // Sincronización de horarios/duración
   ["day-time-min", "day-time-max", "match-duration", "rest-min"].forEach(
     (id) => {
       const el = document.getElementById(id);
-      if (!el) return;
-
-      const updateGlobalScheduleParams = () => {
-        const t = appState.currentTournament;
-        if (!t) return;
-
-        // --- Lectura de valores y actualización del estado ---
-        t.dayTimeMin = document.getElementById("day-time-min").value || "09:00";
-        t.dayTimeMax = document.getElementById("day-time-max").value || "22:00";
-        t.matchDurationMinutes = Number(
-          document.getElementById("match-duration").value || 60
-        );
-        t.restMinMinutes = Number(
-          document.getElementById("rest-min").value || 90
-        );
-        // La actualización de dayConfigs (Día 1, Día 2...) se hace
-        // en el listener de las fechas del Paso 1, pero la forzamos aquí
-        // para asegurarnos que se aplican los límites de tiempo.
-        ensureDayConfigs(t);
-        
-        upsertCurrentTournament();
-        renderFieldDaysMatrix(); // Refresca la matriz de canchas si cambia el número de días
-      };
-
-      el.addEventListener("change", updateGlobalScheduleParams);
-      el.addEventListener("input", updateGlobalScheduleParams);
+      el &&
+        el.addEventListener("change", () => {
+          const t = appState.currentTournament;
+          if (!t) return;
+          t.dayTimeMin =
+            document.getElementById("day-time-min").value || "09:00";
+          t.dayTimeMax =
+            document.getElementById("day-time-max").value || "22:00";
+          t.matchDurationMinutes = Number(
+            document.getElementById("match-duration").value || 60
+          );
+          t.restMinMinutes = Number(
+            document.getElementById("rest-min").value || 90
+          );
+          upsertCurrentTournament();
+        });
     }
   );
-
-  // Llamamos a syncUIFromState_step4 para asegurar que los inputs de tiempo/duración reflejen
-  // el estado actual del torneo si se cargó desde LocalStorage.
-  syncUIFromState_step4(); 
-  
-  renderFieldsTable(); // Deja este al final para que renderice la tabla
-}
-
-// ------------------------------------------------------------------
-// **NUEVA FUNCIÓN REQUERIDA:** Sincronizar campos del Paso 4 (Horarios/Duración)
-// ------------------------------------------------------------------
-function syncUIFromState_step4() {
-    const t = appState.currentTournament;
-    if (!t) return;
-    document.getElementById("day-time-min").value = t.dayTimeMin || "08:00";
-    document.getElementById("day-time-max").value = t.dayTimeMax || "20:00";
-    document.getElementById("match-duration").value = t.matchDurationMinutes || 75;
-    document.getElementById("rest-min").value = t.restMinMinutes || 0;
-}
 
   renderFieldsTable();
 }
@@ -3157,24 +3125,12 @@ if (
   fase1_dia1.forEach((m) => (m.preferredDayIndex = idxDiaZonas1));
   fase1_dia2.forEach((m) => (m.preferredDayIndex = idxDiaZonas2));
 
-// Fases posteriores: mínimo tercer día jugable (si existe)
-  // Día 1 y Día 2 se usan para FASE 1 (ZONAS).
-  // La siguiente fase comienza al menos en el tercer día jugable.
-  if (playableDayIndexes.length >= 3) {
-    const idxMinOtros = playableDayIndexes[2]; // Tercer índice jugable (índice 2)
+  // Fases posteriores: mínimo tercer día jugable (si existe)
+  if (playableDayIndexes.length > 2) {
+    const idxMinOtros = playableDayIndexes[2];
     otros.forEach((m) => {
       m.minDayIndex = idxMinOtros;
     });
-  } else if (playableDayIndexes.length === 2) {
-    // Caso de advertencia: Solo hay 2 días jugables, pero se necesitan 5.
-    // Asignamos el día 2 (índice 1) para que no se mezcle con el Día 1.
-    const idxMinOtros = playableDayIndexes[1];
-    otros.forEach((m) => {
-      m.minDayIndex = idxMinOtros;
-    });
-  } else {
-    // Si solo hay Día 1 o menos, no asignamos minDayIndex, el scheduler intentará asignarlo.
-    console.warn("ADVERTENCIA: Se necesita configurar al menos 3 días jugables para el formato Evita 8x3.");
   }
 
   // Actualizamos base: primero Fase 1 (en orden especial), luego el resto
