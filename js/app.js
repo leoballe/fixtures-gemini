@@ -148,8 +148,8 @@ function normalizeDayConfig(base, indexZeroBased) {
     maxMinutes = minMinutes + 60; // garantizamos al menos un slot
   }
 
-  // Día 5 (idx 4) no puede pasar de las 14:00
-  const clampMax = indexZeroBased === 4 ? "14:00" : null;
+  // Día 5 (idx 4) no puede pasar de las 22:00
+  const clampMax = indexZeroBased === 4 ? "22:00" : null;
   const finalMax = clampMax
     ? minutesToTimeStr(
         Math.min(
@@ -362,7 +362,7 @@ function createEmptyTournament() {
     dayTimeMin: "09:00",
     dayTimeMax: "22:00",
     matchDurationMinutes: 60,
-    restMinMinutes: 90,
+    restMinMinutes: 0,
     matches: [],
   };
 }
@@ -2251,7 +2251,7 @@ function initFieldsSection() {
             document.getElementById("match-duration").value || 60
           );
           t.restMinMinutes = Number(
-            document.getElementById("rest-min").value || 90
+            document.getElementById("rest-min").value || 0
           );
           upsertCurrentTournament();
         });
@@ -2510,14 +2510,14 @@ function initFixtureGeneration() {
              zoneRoundMap[z][r].push(m);
            });
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
-           const patron = [
-             { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-             { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 },
-             { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-             { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 },
-             { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-             { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }
-           ];
+          const patron = [
+            { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+            { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, 
+            { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+            { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, 
+            { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+            { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, 
+          ];
            splitIndexDia1 = 11;
            const usados = new Set();
            const ordered = [];
