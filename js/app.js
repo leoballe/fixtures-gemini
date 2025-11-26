@@ -3197,50 +3197,59 @@ function renderFixtureResult() {
   const tbody = document.createElement("tbody");
   let rowIndex = 0; // numeración global, sólo partidos reales
 
+ // Primero contamos solo partidos normales para numeración
+let normalMatchCount = 0;
+t.matches.forEach((m) => {
+  if (!m.isByeMatch) {
+    normalMatchCount++;
+  }
+});
+
+// Luego procesamos
+let currentMatchNumber = 0;
 t.matches.forEach((m) => {
   const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
   const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
 
-  const homeLabel = home ? home.shortName : m.homeSeed || "?";
-  const awayLabel = away ? away.shortName : m.awaySeed || "?";
+  const homeLabel = home ? home.shortName : m.homeSeed || "";
+  const awayLabel = away ? away.shortName : m.awaySeed || "";
 
-  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
+  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
 
-  const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
-
-  const tr = document.createElement("tr");
-  
-  // Si es partido BYE, mostramos de manera especial
   if (m.isByeMatch) {
-    tr.classList.add("bye-match"); // Agregamos una clase CSS para estilizar
-    tr.innerHTML =
-      "<td>-</td>" +  // Sin número de partido
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>-</td>" +  // Sin fecha
-      "<td>-</td>" +  // Sin hora
-      "<td>-</td>" +  // Sin cancha
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
+    // Para BYE, exportamos pero con campos vacíos
+    rows.push(
+      [
+        "-",           // Nro
+        m.zone || "",
+        "",            // Fecha vacía
+        "",            // Hora vacía  
+        "",            // Cancha vacía
+        homeLabel,
+        awayLabel,
+        m.phase || "",
+        String(m.round || ""),
+        m.code || "",
+      ].join(";")
+    );
   } else {
-    // Partido normal
-    rowIndex++;
-    tr.innerHTML =
-      "<td>" + rowIndex + "</td>" +
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>" + (m.date || "-") + "</td>" +
-      "<td>" + (m.time || "-") + "</td>" +
-      "<td>" + field + "</td>" +
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
+    currentMatchNumber++;
+    rows.push(
+      [
+        String(currentMatchNumber),
+        m.zone || "",
+        m.date || "",
+        m.time || "",
+        field,
+        homeLabel,
+        awayLabel,
+        m.phase || "",
+        String(m.round || ""),
+        m.code || "",
+      ].join(";")
+    );
   }
-
-  tbody.appendChild(tr);
 });
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-}
-
 
 
 // =====================
@@ -3294,11 +3303,11 @@ function renderExportView(mode) {
 const matchNumberById = {};
 let globalIndex = 0;
 t.matches.forEach((m) => {
-  if (m.isByeMatch) {
-    matchNumberById[m.id] = "-"; // BYE no tiene número
-  } else {
+  if (!m.isByeMatch) {
     globalIndex++;
     matchNumberById[m.id] = globalIndex;
+  } else {
+    matchNumberById[m.id] = "-"; // BYE no tiene número
   }
 });
 
@@ -3728,12 +3737,12 @@ function exportPreviewAsPdf() {
     let head = [];
     const body = [];
 
-   if (mode === "team") {
+  if (mode === "team") {
   head = [
     [
       "Fecha",
       "Hora",
-      "Cancha",
+      "Cancha", 
       "Rival",
       "Rol",
       "Zona",
@@ -3741,6 +3750,17 @@ function exportPreviewAsPdf() {
       "ID",
     ],
   ];
+
+  // Primero procesamos los partidos normales para la numeración
+  let normalMatchCount = 0;
+  const matchNumberMap = new Map();
+  
+  grouped[key].forEach((m) => {
+    if (!m.isByeMatch) {
+      normalMatchCount++;
+      matchNumberMap.set(m.id, normalMatchCount);
+    }
+  });
 
   grouped[key].forEach((m) => {
     const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
@@ -3752,22 +3772,36 @@ function exportPreviewAsPdf() {
     const rivalLabel = isHome ? awayLabel : homeLabel;
     const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    body.push([
-      m.date || "",
-      m.time || "",
-      field,
-      rivalLabel,
-      m.role || "",
-      m.zone || "",
-      phaseRoundLabel,
-      m.code || "",
-    ]);
+    if (m.isByeMatch) {
+      body.push([
+        "",  // Fecha vacía
+        "",  // Hora vacía
+        "",  // Cancha vacía
+        rivalLabel,
+        m.role || "",
+        m.zone || "",
+        phaseRoundLabel,
+        "-",  // ID vacío para BYE
+      ]);
+    } else {
+      const matchNumber = matchNumberMap.get(m.id) || "";
+      body.push([
+        m.date || "",
+        m.time || "",
+        field,
+        rivalLabel,
+        m.role || "",
+        m.zone || "",
+        phaseRoundLabel,
+        matchNumber,  // Usamos la numeración consecutiva sin BYE
+      ]);
+    }
   });
 } else {
   head = [
     [
       "Fecha",
-      "Hora",
+      "Hora", 
       "Cancha",
       "Local",
       "Visitante",
@@ -3777,6 +3811,17 @@ function exportPreviewAsPdf() {
     ],
   ];
 
+  // Primero procesamos los partidos normales para la numeración
+  let normalMatchCount = 0;
+  const matchNumberMap = new Map();
+  
+  grouped[key].forEach((m) => {
+    if (!m.isByeMatch) {
+      normalMatchCount++;
+      matchNumberMap.set(m.id, normalMatchCount);
+    }
+  });
+
   grouped[key].forEach((m) => {
     const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
     const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
@@ -3785,7 +3830,6 @@ function exportPreviewAsPdf() {
     const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
     const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    // Si es partido BYE, mostramos campos vacíos en fecha/hora/cancha
     if (m.isByeMatch) {
       body.push([
         "",  // Fecha vacía
@@ -3795,9 +3839,10 @@ function exportPreviewAsPdf() {
         awayLabel,
         m.zone || "",
         phaseRoundLabel,
-        m.code || "",
+        "-",  // ID vacío para BYE
       ]);
     } else {
+      const matchNumber = matchNumberMap.get(m.id) || "";
       body.push([
         m.date || "",
         m.time || "",
@@ -3806,7 +3851,7 @@ function exportPreviewAsPdf() {
         awayLabel,
         m.zone || "",
         phaseRoundLabel,
-        m.code || "",
+        matchNumber,  // Usamos la numeración consecutiva sin BYE
       ]);
     }
   });
