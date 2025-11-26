@@ -2217,6 +2217,9 @@ function renderBreaksList() {
 // =====================
 //  STEP 5: GENERAR FIXTURE (CORREGIDO: FINALES AL FINAL)
 // =====================
+// =====================
+//  STEP 5: GENERAR FIXTURE (CORREGIDO: FINALES AL FINAL)
+// =====================
 function initFixtureGeneration() {
   const btn = document.getElementById("btn-generate-fixture");
   if (!btn) return;
@@ -2354,12 +2357,12 @@ function initFixtureGeneration() {
            });
            const [z1, z2, z3, z4, z5, z6, z7] = zones;
            const patron = [
-            { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-            { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, 
-            { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-            { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, 
-            { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-            { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, 
+             { r: 1, z: z1 }, { r: 1, z: z2 }, { r: 1, z: z3 }, { r: 1, z: z4 },
+             { r: 1, z: z5 }, { r: 1, z: z6 }, { r: 1, z: z7 },
+             { r: 2, z: z1 }, { r: 2, z: z2 }, { r: 2, z: z3 }, { r: 2, z: z4 },
+             { r: 2, z: z5 }, { r: 2, z: z6 }, { r: 2, z: z7 },
+             { r: 3, z: z1 }, { r: 3, z: z2 }, { r: 3, z: z3 }, { r: 3, z: z4 },
+             { r: 3, z: z5 }, { r: 3, z: z6 }, { r: 3, z: z7 }
            ];
            splitIndexDia1 = 11;
            const ordered = []; const usados = new Set();
