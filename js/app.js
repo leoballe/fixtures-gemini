@@ -3905,7 +3905,7 @@ function exportPreviewAsPdf() {
         awayLabel,
         m.zone || "",
         phaseRoundLabel,
-        m.code || "",
+        matchNumberMap.get(m.id) || "", 
       ]);
     }
   });
