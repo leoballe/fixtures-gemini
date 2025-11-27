@@ -3294,12 +3294,43 @@ function renderExportView(mode) {
 const matchNumberById = {};
 let globalIndex = 0;
 t.matches.forEach((m) => {
+  const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+  const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+
+  const homeLabel = home ? home.shortName : m.homeSeed || "?";
+  const awayLabel = away ? away.shortName : m.awaySeed || "?";
+
+  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
+
+  const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
+
+  const tr = document.createElement("tr");
+  
+  // Si es partido BYE, mostramos de manera especial
   if (m.isByeMatch) {
-    matchNumberById[m.id] = "-"; // BYE no tiene número
+    tr.classList.add("bye-match");
+    tr.innerHTML =
+      "<td>-</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>-</td>" +
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>";
   } else {
-    globalIndex++;
-    matchNumberById[m.id] = globalIndex;
+    // Partido normal
+    rowIndex++;
+    tr.innerHTML =
+      "<td>" + rowIndex + "</td>" +
+      "<td>" + (m.zone || "-") + "</td>" +
+      "<td>" + (m.date || "-") + "</td>" +
+      "<td>" + (m.time || "-") + "</td>" +
+      "<td>" + field + "</td>" +
+      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+      "<td>" + phaseRoundLabel + "</td>";
   }
+
+  tbody.appendChild(tr);
 });
 
   container.innerHTML = "";
