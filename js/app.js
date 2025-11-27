@@ -3829,8 +3829,7 @@ function exportPreviewAsPdf() {
     const homeLabel = home ? home.shortName : m.homeSeed || "";
     const awayLabel = away ? away.shortName : m.awaySeed || "";
     const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
-    const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
-
+      const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.isByeMatch ? "" : (m.code ? " · " + m.code : "")) + ")";
         if (m.isByeMatch) {
       body.push([
         "",  // Fecha vacía
