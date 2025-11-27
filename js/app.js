@@ -3749,7 +3749,15 @@ function exportPreviewAsPdf() {
       }
     });
   }
-
+  // Numeración global que excluye BYE (para todos los modos)
+  const matchNumberMap = new Map();
+  let globalMatchNumber = 0;
+  t.matches.forEach((m) => {
+    if (!m.isByeMatch) {
+      globalMatchNumber++;
+      matchNumberMap.set(m.id, globalMatchNumber);
+    }
+  });
   let keys = Object.keys(grouped);
 
   let firstGroup = true;
@@ -3823,7 +3831,7 @@ function exportPreviewAsPdf() {
     const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
     const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    if (m.isByeMatch) {
+        if (m.isByeMatch) {
       body.push([
         "",  // Fecha vacía
         "",  // Hora vacía
@@ -3835,7 +3843,7 @@ function exportPreviewAsPdf() {
         "-",  // ID vacío para BYE
       ]);
     } else {
-      const matchNumber = matchNumberMap ? matchNumberMap.get(m.id) : "";
+      const matchNumber = matchNumberMap.get(m.id) || "";
       body.push([
         m.date || "",
         m.time || "",
@@ -3844,7 +3852,7 @@ function exportPreviewAsPdf() {
         awayLabel,
         m.zone || "",
         phaseRoundLabel,
-        matchNumber || "",
+        matchNumber,  // Usamos la numeración que excluye BYE
       ]);
     }
   });
