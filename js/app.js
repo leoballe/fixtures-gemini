@@ -3849,7 +3849,14 @@ function exportPreviewAsPdf() {
     ],
   ];
 
-  grouped[key].forEach((m) => {
+    // Ordenar: primero partidos normales, luego BYE
+  const sortedMatches = grouped[key].slice().sort((a, b) => {
+    if (a.isByeMatch && !b.isByeMatch) return 1;
+    if (!a.isByeMatch && b.isByeMatch) return -1;
+    return 0;
+  });
+
+  sortedMatches.forEach((m) => {
     const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
     const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
     const homeLabel = home ? home.shortName : m.homeSeed || "";
@@ -3857,7 +3864,6 @@ function exportPreviewAsPdf() {
     const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
     const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    // Si es partido BYE, mostramos campos vacíos en fecha/hora/cancha
     if (m.isByeMatch) {
       body.push([
         "",  // Fecha vacía
@@ -3867,7 +3873,7 @@ function exportPreviewAsPdf() {
         awayLabel,
         m.zone || "",
         phaseRoundLabel,
-        m.code || "",
+        "-",  // ID vacío para BYE
       ]);
     } else {
       body.push([
