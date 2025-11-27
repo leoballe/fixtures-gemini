@@ -3290,87 +3290,52 @@ function renderExportView(mode) {
     fieldById[f.id] = f;
   });
 
-// Numeración global de partidos (sin BYE) para usar como ID consistente
+
+  container.innerHTML = "";
+// Numeración global de partidos (BYE no tienen número)
 const matchNumberById = {};
 let globalIndex = 0;
 t.matches.forEach((m) => {
-  const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-  const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-
-  const homeLabel = home ? home.shortName : m.homeSeed || "?";
-  const awayLabel = away ? away.shortName : m.awaySeed || "?";
-
-  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
-
-  const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
-
-  const tr = document.createElement("tr");
-  
-  // Si es partido BYE, mostramos de manera especial
   if (m.isByeMatch) {
-    tr.classList.add("bye-match");
-    tr.innerHTML =
-      "<td>-</td>" +
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>-</td>" +
-      "<td>-</td>" +
-      "<td>-</td>" +
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
+    matchNumberById[m.id] = "-";
   } else {
-    // Partido normal
-    rowIndex++;
-    tr.innerHTML =
-      "<td>" + rowIndex + "</td>" +
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>" + (m.date || "-") + "</td>" +
-      "<td>" + (m.time || "-") + "</td>" +
-      "<td>" + field + "</td>" +
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
+    globalIndex++;
+    matchNumberById[m.id] = globalIndex;
   }
-
-  tbody.appendChild(tr);
 });
-
-  container.innerHTML = "";
-
   const grouped = {};
 
-  if (mode === "zone") {
-    t.matches.forEach((m) => {
-      if (m.isByeMatch) return;
-      const key = m.zone || "Sin zona";
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(m);
-    });
-  } else if (mode === "day") {
-    t.matches.forEach((m) => {
-      if (m.isByeMatch) return;
-      const key = m.date || "Sin fecha";
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(m);
-    });
-  } else if (mode === "field") {
-    t.matches.forEach((m) => {
-      if (m.isByeMatch) return;
-      const key = m.fieldId || "Sin cancha";
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(m);
-    });
-  } else if (mode === "team") {
-    t.matches.forEach((m) => {
-      if (m.isByeMatch) return;
-      if (m.homeTeamId) {
-        if (!grouped[m.homeTeamId]) grouped[m.homeTeamId] = [];
-        grouped[m.homeTeamId].push(Object.assign({ role: "Local" }, m));
-      }
-      if (m.awayTeamId) {
-        if (!grouped[m.awayTeamId]) grouped[m.awayTeamId] = [];
-        grouped[m.awayTeamId].push(Object.assign({ role: "Visitante" }, m));
-      }
-    });
-  }
+ if (mode === "zone") {
+  t.matches.forEach((m) => {
+    if (m.isByeMatch) return;  // <-- ELIMINÁ ESTA LÍNEA
+    const key = m.zone || "Sin zona";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(m);
+  });
+} else if (mode === "day") {
+  t.matches.forEach((m) => {
+    const key = m.date || "Sin fecha";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(m);
+  });
+} else if (mode === "field") {
+  t.matches.forEach((m) => {
+    const key = m.fieldId || "Sin cancha";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(m);
+  });
+} else if (mode === "team") {
+  t.matches.forEach((m) => {
+    if (m.homeTeamId) {
+      if (!grouped[m.homeTeamId]) grouped[m.homeTeamId] = [];
+      grouped[m.homeTeamId].push(Object.assign({ role: "Local" }, m));
+    }
+    if (m.awayTeamId) {
+      if (!grouped[m.awayTeamId]) grouped[m.awayTeamId] = [];
+      grouped[m.awayTeamId].push(Object.assign({ role: "Visitante" }, m));
+    }
+  });
+}
 
   const modeTitle =
     {
