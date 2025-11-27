@@ -12,7 +12,22 @@
 // MODELOS EVITA (24 equipos)
 // =====================
 
-
+// Función para encontrar el día jugable por índice (ignorando días "off")
+function findPlayableDayByIndex(tournament, targetPlayableIndex) {
+  if (!tournament.dayConfigs || !tournament.dayConfigs.length) return null;
+  
+  let playableCount = 0;
+  for (let i = 0; i < tournament.dayConfigs.length; i++) {
+    const dc = tournament.dayConfigs[i];
+    if (dc.type !== "off") {
+      playableCount++;
+      if (playableCount === targetPlayableIndex) {
+        return dc;
+      }
+    }
+  }
+  return null;
+}
 const EVITA_MODELS = {
   EVITA_24_8x3_NORMAL_5D_2C: {
     id: "EVITA_24_8x3_NORMAL_5D_2C",
@@ -3325,11 +3340,10 @@ t.matches.forEach((m) => {
 } else if (mode === "day") {
   t.matches.forEach((m) => {
     let key;
-    if (m.isByeMatch) {
-      // Para BYE, los asignamos al día 3 (donde ocurre la fase 17-24)
-      // Buscamos la fecha del día 3 en las configuraciones
-      const day3Config = t.dayConfigs && t.dayConfigs.find(dc => dc.index === 3);
-      key = day3Config ? day3Config.date : "2025-12-03"; // Fallback si no encuentra
+    if (m.isByeMatch && m.phase && m.phase.includes("17-24")) {
+      // BYE de Puestos 17-24 van al día 3 JUGABLE (ignorando días "off")
+      const day3Config = findPlayableDayByIndex(t, 3);
+      key = day3Config ? day3Config.date : "2025-12-03";
     } else {
       key = m.date || "Sin fecha";
     }
@@ -3707,11 +3721,10 @@ function exportPreviewAsPdf() {
 } else if (mode === "day") {
   t.matches.forEach((m) => {
     let key;
-    if (m.isByeMatch) {
-      // Para BYE, los asignamos al día 3 (donde ocurre la fase 17-24)
-      // Buscamos la fecha del día 3 en las configuraciones
-      const day3Config = t.dayConfigs && t.dayConfigs.find(dc => dc.index === 3);
-      key = day3Config ? day3Config.date : "2025-12-03"; // Fallback si no encuentra
+    if (m.isByeMatch && m.phase && m.phase.includes("17-24")) {
+      // BYE de Puestos 17-24 van al día 3 JUGABLE (ignorando días "off")
+      const day3Config = findPlayableDayByIndex(t, 3);
+      key = day3Config ? day3Config.date : "2025-12-03";
     } else {
       key = m.date || "Sin fecha";
     }
