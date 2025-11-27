@@ -3324,7 +3324,15 @@ t.matches.forEach((m) => {
   });
 } else if (mode === "day") {
   t.matches.forEach((m) => {
-    const key = m.date || "Sin fecha";
+    let key;
+    if (m.isByeMatch) {
+      // Para BYE, los asignamos al día 3 (donde ocurre la fase 17-24)
+      // Buscamos la fecha del día 3 en las configuraciones
+      const day3Config = t.dayConfigs && t.dayConfigs.find(dc => dc.index === 3);
+      key = day3Config ? day3Config.date : "2025-12-03"; // Fallback si no encuentra
+    } else {
+      key = m.date || "Sin fecha";
+    }
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(m);
   });
@@ -3414,10 +3422,15 @@ t.matches.forEach((m) => {
 
     const tbody = document.createElement("tbody");
 
-    // Orden dentro de cada grupo
+     // Orden dentro de cada grupo
     let rows = grouped[key].slice();
     if (mode === "day") {
       rows.sort((a, b) => {
+        // Primero, los BYE van al final del día
+        if (a.isByeMatch && !b.isByeMatch) return 1;
+        if (!a.isByeMatch && b.isByeMatch) return -1;
+        
+        // Si ambos son BYE o ambos no son BYE, ordenar por hora
         const ta = a.time || "";
         const tb = b.time || "";
         if (ta < tb) return -1;
@@ -3695,16 +3708,10 @@ function exportPreviewAsPdf() {
   t.matches.forEach((m) => {
     let key;
     if (m.isByeMatch) {
-      // Para BYE, determinamos el día basado en la fase
-      if (m.phase && m.phase.includes("17-24")) {
-        // BYE de Puestos 17-24 van en día 3
-        key = "Día 3 - BYE";
-      } else if (m.phase && m.phase.includes("9-16")) {
-        // BYE de Puestos 9-16 van en día 3  
-        key = "Día 3 - BYE";
-      } else {
-        key = "Sin fecha - BYE";
-      }
+      // Para BYE, los asignamos al día 3 (donde ocurre la fase 17-24)
+      // Buscamos la fecha del día 3 en las configuraciones
+      const day3Config = t.dayConfigs && t.dayConfigs.find(dc => dc.index === 3);
+      key = day3Config ? day3Config.date : "2025-12-03"; // Fallback si no encuentra
     } else {
       key = m.date || "Sin fecha";
     }
@@ -3732,32 +3739,7 @@ function exportPreviewAsPdf() {
 
   let keys = Object.keys(grouped);
 
-  // Para el modo día, ordenamos de manera especial
-  if (mode === "day") {
-    keys.sort((a, b) => {
-      const dayOrder = {
-        "2025-12-01": 1,
-        "Día 1": 1,
-        "2025-12-02": 2, 
-        "Día 2": 2,
-        "2025-12-03": 3,
-        "Día 3": 3,
-        "Día 3 - BYE": 3.5, // BYE después de los partidos normales del día 3
-        "2025-12-04": 4,
-        "Día 4": 4,
-        "2025-12-05": 5,
-        "Día 5": 5,
-        "Sin fecha": 6,
-        "Sin fecha - BYE": 7
-      };
-      
-      const orderA = dayOrder[a] || 99;
-      const orderB = dayOrder[b] || 99;
-      return orderA - orderB;
-    });
-  } else {
-    keys.sort();
-  }
+   const keys = Object.keys(grouped).sort();
   let firstGroup = true;
 
   keys.forEach((key) => {
@@ -3769,15 +3751,10 @@ function exportPreviewAsPdf() {
     let headingText = "";
     if (mode === "zone") {
       headingText = "Zona " + key;
-     } else if (mode === "day") {
-      if (key === "Día 3 - BYE") {
-        headingText = "Día 3 - Partidos BYE";
-      } else if (key === "Sin fecha - BYE") {
-        headingText = "Partidos BYE - Sin fecha asignada";
-      } else {
-        headingText = "Día " + key;
-      }
-    } else if (mode === "field") {
+        } else if (mode === "day") {
+      headingText = "Día " + key;
+    }
+      else if (mode === "field") {
       const field = fieldById[key];
       headingText = "Cancha: " + (field ? field.name : key);
     } else if (mode === "team") {
@@ -3805,26 +3782,59 @@ function exportPreviewAsPdf() {
     ],
   ];
 
-  grouped[key].forEach((m) => {
+  // Ordenar los partidos del día: primero los normales, luego los BYE
+  const sortedMatches = grouped[key].slice().sort((a, b) => {
+    // Los BYE van al final
+    if (a.isByeMatch && !b.isByeMatch) return 1;
+    if (!a.isByeMatch && b.isByeMatch) return -1;
+    
+    // Si ambos son normales o ambos son BYE, ordenar por hora
+    const ta = a.time || "";
+    const tb = b.time || "";
+    if (ta < tb) return -1;
+    if (ta > tb) return 1;
+    
+    // Desempate por cancha
+    const fa = a.fieldId || "";
+    const fb = b.fieldId || "";
+    if (fa < fb) return -1;
+    if (fa > fb) return 1;
+    
+    return 0;
+  });
+
+  sortedMatches.forEach((m) => {
     const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
     const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-    const homeLabel = home ? home.shortName : m.homeSeed || "?";
-    const awayLabel = away ? away.shortName : m.awaySeed || "?";
+    const homeLabel = home ? home.shortName : m.homeSeed || "";
+    const awayLabel = away ? away.shortName : m.awaySeed || "";
     const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
-    const isHome = m.role === "Local";
-    const rivalLabel = isHome ? awayLabel : homeLabel;
     const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-    body.push([
-      m.date || "",
-      m.time || "",
-      field,
-      rivalLabel,
-      m.role || "",
-      m.zone || "",
-      phaseRoundLabel,
-      m.code || "",
-    ]);
+    if (m.isByeMatch) {
+      body.push([
+        "",  // Fecha vacía
+        "",  // Hora vacía
+        "",  // Cancha vacía
+        homeLabel,
+        awayLabel,
+        m.zone || "",
+        phaseRoundLabel,
+        "-",  // ID vacío para BYE
+      ]);
+    } else {
+      const matchNumber = matchNumberMap ? matchNumberMap.get(m.id) : "";
+      body.push([
+        m.date || "",
+        m.time || "",
+        field,
+        homeLabel,
+        awayLabel,
+        m.zone || "",
+        phaseRoundLabel,
+        matchNumber || "",
+      ]);
+    }
   });
 } else {
   head = [
