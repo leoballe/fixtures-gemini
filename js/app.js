@@ -3306,11 +3306,11 @@ function renderExportView(mode) {
 const matchNumberById = {};
 let globalIndex = 0;
 t.matches.forEach((m) => {
-  if (m.isByeMatch) {
-    matchNumberById[m.id] = "-";
-  } else {
+  if (!m.isByeMatch) {
     globalIndex++;
     matchNumberById[m.id] = globalIndex;
+  } else {
+    matchNumberById[m.id] = "-";
   }
 });
   const grouped = {};
@@ -3551,49 +3551,59 @@ function exportMatchesAsCsv() {
 
 let rowIndex = 0;
 
-t.matches.forEach((m) => {
-  const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-  const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+  // Primero contamos solo partidos normales para numeración
+  let normalMatchCount = 0;
+  t.matches.forEach((m) => {
+    if (!m.isByeMatch) {
+      normalMatchCount++;
+    }
+  });
 
-  const homeLabel = home ? home.shortName : m.homeSeed || "";
-  const awayLabel = away ? away.shortName : m.awaySeed || "";
+  // Luego procesamos con numeración correcta
+  let currentMatchNumber = 0;
+  t.matches.forEach((m) => {
+    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
 
-  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+    const homeLabel = home ? home.shortName : m.homeSeed || "";
+    const awayLabel = away ? away.shortName : m.awaySeed || "";
 
-  if (m.isByeMatch) {
-    // Para BYE, exportamos pero con campos vacíos en fecha/hora/cancha
-    rows.push(
-      [
-        "-",           // Nro
-        m.zone || "",
-        "",            // Fecha vacía
-        "",            // Hora vacía  
-        "",            // Cancha vacía
-        homeLabel,
-        awayLabel,
-        m.phase || "",
-        String(m.round || ""),
-        m.code || "",
-      ].join(";")
-    );
-  } else {
-    rowIndex++;
-    rows.push(
-      [
-        String(rowIndex),
-        m.zone || "",
-        m.date || "",
-        m.time || "",
-        field,
-        homeLabel,
-        awayLabel,
-        m.phase || "",
-        String(m.round || ""),
-        m.code || "",
-      ].join(";")
-    );
-  }
-});
+    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+
+    if (m.isByeMatch) {
+      // Para BYE, exportamos con campos vacíos
+      rows.push(
+        [
+          "-",           // Nro (sin número)
+          m.zone || "",
+          "",            // Fecha vacía
+          "",            // Hora vacía  
+          "",            // Cancha vacía
+          homeLabel,
+          awayLabel,
+          m.phase || "",
+          String(m.round || ""),
+          m.code || "",
+        ].join(";")
+      );
+    } else {
+      currentMatchNumber++;
+      rows.push(
+        [
+          String(currentMatchNumber),
+          m.zone || "",
+          m.date || "",
+          m.time || "",
+          field,
+          homeLabel,
+          awayLabel,
+          m.phase || "",
+          String(m.round || ""),
+          m.code || "",
+        ].join(";")
+      );
+    }
+  });
 
 
   const csvContent = rows.join("\r\n");
@@ -3681,13 +3691,27 @@ function exportPreviewAsPdf() {
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(m);
     });
-  } else if (mode === "day") {
-    t.matches.forEach((m) => {
-      const key = m.date || "Sin fecha";
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(m);
-    });
-  } else if (mode === "field") {
+} else if (mode === "day") {
+  t.matches.forEach((m) => {
+    let key;
+    if (m.isByeMatch) {
+      // Para BYE, determinamos el día basado en la fase
+      if (m.phase && m.phase.includes("17-24")) {
+        // BYE de Puestos 17-24 van en día 3
+        key = "Día 3 - BYE";
+      } else if (m.phase && m.phase.includes("9-16")) {
+        // BYE de Puestos 9-16 van en día 3  
+        key = "Día 3 - BYE";
+      } else {
+        key = "Sin fecha - BYE";
+      }
+    } else {
+      key = m.date || "Sin fecha";
+    }
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(m);
+  });
+} else if (mode === "field") {
     t.matches.forEach((m) => {
       const key = m.fieldId || "Sin cancha";
       if (!grouped[key]) grouped[key] = [];
@@ -3706,7 +3730,34 @@ function exportPreviewAsPdf() {
     });
   }
 
-  const keys = Object.keys(grouped).sort();
+  let keys = Object.keys(grouped);
+
+  // Para el modo día, ordenamos de manera especial
+  if (mode === "day") {
+    keys.sort((a, b) => {
+      const dayOrder = {
+        "2025-12-01": 1,
+        "Día 1": 1,
+        "2025-12-02": 2, 
+        "Día 2": 2,
+        "2025-12-03": 3,
+        "Día 3": 3,
+        "Día 3 - BYE": 3.5, // BYE después de los partidos normales del día 3
+        "2025-12-04": 4,
+        "Día 4": 4,
+        "2025-12-05": 5,
+        "Día 5": 5,
+        "Sin fecha": 6,
+        "Sin fecha - BYE": 7
+      };
+      
+      const orderA = dayOrder[a] || 99;
+      const orderB = dayOrder[b] || 99;
+      return orderA - orderB;
+    });
+  } else {
+    keys.sort();
+  }
   let firstGroup = true;
 
   keys.forEach((key) => {
@@ -3718,8 +3769,14 @@ function exportPreviewAsPdf() {
     let headingText = "";
     if (mode === "zone") {
       headingText = "Zona " + key;
-    } else if (mode === "day") {
-      headingText = "Día " + key;
+     } else if (mode === "day") {
+      if (key === "Día 3 - BYE") {
+        headingText = "Día 3 - Partidos BYE";
+      } else if (key === "Sin fecha - BYE") {
+        headingText = "Partidos BYE - Sin fecha asignada";
+      } else {
+        headingText = "Día " + key;
+      }
     } else if (mode === "field") {
       const field = fieldById[key];
       headingText = "Cancha: " + (field ? field.name : key);
