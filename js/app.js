@@ -3739,7 +3739,6 @@ function exportPreviewAsPdf() {
 
   let keys = Object.keys(grouped);
 
-   const keys = Object.keys(grouped).sort();
   let firstGroup = true;
 
   keys.forEach((key) => {
