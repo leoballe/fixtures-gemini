@@ -845,43 +845,94 @@ function interleaveLists(lists) {
 }
 
 function ordenarMatchesEspecial8x3(matches) {
-  const fase1 = matches.filter(m => (m.phase || "").includes("Fase 1"));
-  const fase2A1 = matches.filter(m => (m.phase || "").includes("Zona A1"));
-  const fase2A2 = matches.filter(m => (m.phase || "").includes("Zona A2"));
-  const puestos9_16 = matches.filter(m => (m.phase || "").includes("9-16"));
-  const puestos17_24 = matches.filter(m => (m.phase || "").includes("17-24"));
-  const puestos1_8 = matches.filter(m => (m.phase || "").includes("1-8"));
-  const otros = matches.filter(m => ![
-    "Fase 1", "Zona A1", "Zona A2", "9-16", "17-24", "1-8"
-  ].some(phase => (m.phase || "").includes(phase)));
+  const fase1 = [];
+  const fase2A1 = [];
+  const fase2A2 = [];
+  const puestos9_16 = [];
+  const puestos17_24 = [];
+  const puestos1_8 = [];
+  const otros = [];
 
-  // Ordenar Fase 1 por zona y ronda
-  fase1.sort((a, b) => {
-    const zoneA = a.zone || "";
-    const zoneB = b.zone || "";
-    if (zoneA < zoneB) return -1;
-    if (zoneA > zoneB) return 1;
-    return (a.round || 0) - (b.round || 0);
+  // Separar por fase
+  matches.forEach((m) => {
+    const phase = m.phase || "";
+    if (phase.includes("Fase 1")) {
+      fase1.push(m);
+    } else if (phase.includes("Zona A1")) {
+      fase2A1.push(m);
+    } else if (phase.includes("Zona A2")) {
+      fase2A2.push(m);
+    } else if (phase.includes("9-16")) {
+      puestos9_16.push(m);
+    } else if (phase.includes("17-24")) {
+      puestos17_24.push(m);
+    } else if (phase.includes("1-8")) {
+      puestos1_8.push(m);
+    } else {
+      otros.push(m);
+    }
   });
 
+  // Función para ordenar Fase 1 según el patrón específico
+  function ordenarFase1(partidos) {
+    const zonas = [...new Set(partidos.map(p => p.zone))].sort((a, b) => 
+      a.localeCompare(b, "es", { numeric: true, sensitivity: "base" })
+    );
+    
+    const rondas = [...new Set(partidos.map(p => p.round))].sort((a, b) => a - b);
+    
+    // Crear mapa zona -> ronda -> partidos
+    const mapa = {};
+    zonas.forEach(z => {
+      mapa[z] = {};
+      rondas.forEach(r => {
+        mapa[z][r] = partidos.filter(p => p.zone === z && p.round === r);
+      });
+    });
+
+    // Patrón de orden: zonas impares primero, luego pares
+    const zonasOrdenadas = [];
+    for (let i = 0; i < zonas.length; i++) {
+      if (i % 2 === 0) zonasOrdenadas.push(zonas[i]); // Impares (índice 0, 2, 4, 6)
+    }
+    for (let i = 0; i < zonas.length; i++) {
+      if (i % 2 === 1) zonasOrdenadas.push(zonas[i]); // Pares (índice 1, 3, 5, 7)
+    }
+
+    const resultado = [];
+    
+    // Para cada ronda, seguir el patrón de zonas
+    rondas.forEach(ronda => {
+      zonasOrdenadas.forEach(zona => {
+        const partidosZonaRonda = mapa[zona][ronda] || [];
+        resultado.push(...partidosZonaRonda);
+      });
+    });
+
+    return resultado;
+  }
+
+  // Ordenar Fase 1
+  const fase1Ordenada = ordenarFase1(fase1);
+
   // Ordenar fases finales por ronda
-  [fase2A1, fase2A2, puestos9_16, puestos17_24].forEach(group => {
-    group.sort((a, b) => (a.round || 0) - (b.round || 0));
+  [fase2A1, fase2A2, puestos9_16, puestos17_24].forEach(grupo => {
+    grupo.sort((a, b) => (a.round || 0) - (b.round || 0));
   });
 
   // Ordenar Puestos 1-8 de forma específica
   puestos1_8.sort((a, b) => {
-    const getPosition = (m) => {
-      const seed = (m.homeSeed || m.awaySeed || "").toString();
-      const match = seed.match(/(\d+)/);
-      return match ? parseInt(match[1]) : 99;
+    const extraerPosicion = (m) => {
+      const s = (m.homeSeed || m.awaySeed || "").toString();
+      const match = s.match(/^(\d+)/);
+      return match ? parseInt(match[1], 10) : 99;
     };
-    return getPosition(b) - getPosition(a);
+    return extraerPosicion(b) - extraerPosicion(a);
   });
 
   // Concatenar en el orden correcto
   return [
-    ...fase1,
+    ...fase1Ordenada,
     ...fase2A1,
     ...fase2A2,
     ...puestos9_16,
