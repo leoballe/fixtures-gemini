@@ -1053,13 +1053,31 @@ function generarEspecial8x3(t) {
     a.localeCompare(b, "es", { numeric: true, sensitivity: "base" })
   );
 
-  // Siempre trabajamos con 8 zonas (Z1..Z8)
-  if (zoneNames.length !== 8) {
+  // Validación de cantidad de zonas según número de equipos
+  if (totalEquipos === 21) {
+    if (zoneNames.length !== 7) {
+      alert(
+        "Para 21 equipos el formato especial 8×3 requiere exactamente 7 zonas.\n" +
+          "Detectadas: " +
+          zoneNames.length +
+          " zonas. Verificá la columna 'Zona' de los equipos."
+      );
+      return [];
+    }
+  } else if (totalEquipos === 22 || totalEquipos === 23 || totalEquipos === 24) {
+    if (zoneNames.length !== 8) {
+      alert(
+        "Para " + totalEquipos + " equipos el formato especial 8×3 requiere exactamente 8 zonas.\n" +
+          "Detectadas: " +
+          zoneNames.length +
+          " zonas. Verificá la columna 'Zona' de los equipos."
+      );
+      return [];
+    }
+  } else {
     alert(
-      "El formato especial 8×3 requiere exactamente 8 zonas.\n" +
-        "Actualmente se detectan " +
-        zoneNames.length +
-        " zonas. Verificá la columna 'Zona' de los equipos."
+      "El formato especial 8×3 solo funciona con 21, 22, 23 o 24 equipos.\n" +
+        "Equipos detectados: " + totalEquipos
     );
     return [];
   }
@@ -1206,7 +1224,7 @@ function generarEspecial8x3(t) {
   const z5 = zoneNames[4];
   const z6 = zoneNames[5];
   const z7 = zoneNames[6];
-  const z8 = zoneNames[7];
+  const z8 = totalEquipos === 21 ? null : zoneNames[7]; // Para 21 equipos, no hay z8
 
   // Seeds para 21 equipos (7 zonas)
   let seedsA1, seedsA2;
@@ -3035,8 +3053,8 @@ if (
     );
     const rounds = Array.from(roundsSet).sort((a, b) => a - b);
 
-    // Solo aplicamos el patrón si tenemos realmente 8 zonas y 3 rondas
-    if (zones.length === 8 && rounds.length >= 3) {
+    // Aplicamos el patrón si tenemos 7 u 8 zonas y 3 rondas
+    if ((zones.length === 7 || zones.length === 8) && rounds.length >= 3) {
       const zoneRoundMap = {};
 
       fase1.forEach((m) => {
@@ -3047,36 +3065,36 @@ if (
         zoneRoundMap[z][r].push(m);
       });
 
-      const [z1, z2, z3, z4, z5, z6, z7, z8] = zones;
+      // Para 21 equipos (7 zonas) usamos solo z1 a z7
+      const [z1, z2, z3, z4, z5, z6, z7] = zones;
+      const z8 = zones.length === 8 ? zones[7] : null;
 
-      const patron = [
-        // Día 1
-        { r: 1, z: z1 },
-        { r: 1, z: z3 },
-        { r: 1, z: z5 },
-        { r: 1, z: z7 },
-        { r: 1, z: z2 },
-        { r: 1, z: z4 },
-        { r: 1, z: z6 },
-        { r: 1, z: z8 },
-        { r: 2, z: z1 },
-        { r: 2, z: z3 },
-        { r: 2, z: z5 },
-        { r: 2, z: z7 },
-        // Día 2
-        { r: 2, z: z2 },
-        { r: 2, z: z4 },
-        { r: 2, z: z6 },
-        { r: 2, z: z8 },
-        { r: 3, z: z1 },
-        { r: 3, z: z3 },
-        { r: 3, z: z5 },
-        { r: 3, z: z7 },
-        { r: 3, z: z2 },
-        { r: 3, z: z4 },
-        { r: 3, z: z6 },
-        { r: 3, z: z8 },
-      ];
+       let patron;
+      if (zones.length === 8) {
+        // Patrón original para 8 zonas
+        patron = [
+          // Día 1
+          { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+          { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, { r: 1, z: z8 },
+          { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+          // Día 2
+          { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
+          { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+          { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, { r: 3, z: z8 },
+        ];
+      } else {
+        // Patrón para 7 zonas (21 equipos)
+        patron = [
+          // Día 1
+          { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
+          { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 },
+          { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
+          // Día 2
+          { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 },
+          { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
+          { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 },
+        ];
+      }
 
       const usados = new Set();
       const ordered = [];
