@@ -1735,7 +1735,7 @@ if (totalEquipos === 24) {
     m17_11,
     m17_12
   );
-  } else if (totalEquipos === 21) {
+    } else if (totalEquipos === 21) {
     // Para 21 equipos: nuevo sembrado de llave C
     const m17_1 = crearMatchClasif("P17_1", "3°3°", "BYE (3°3°)", 1, phase17_24, zone17_24);
     m17_1.isByeMatch = true;
@@ -1747,7 +1747,20 @@ if (totalEquipos === 24) {
 
     const m17_4 = crearMatchClasif("P17_4", "BYE (5°3°)", "5°3°", 1, phase17_24, zone17_24);
     m17_4.isByeMatch = true;
-      allMatches.push(
+
+    // Ronda 2 (semifinales) - misma estructura GP/PP
+    const m17_5 = crearMatchDesdeGP_PP("P17_5", m17_1.code, "GP", m17_2.code, "GP", 2, phase17_24, zone17_24);
+    const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
+    const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_1.code, "PP", m17_2.code, "PP", 2, phase17_24, zone17_24);
+    const m17_8 = crearMatchDesdeGP_PP("P17_8", m17_3.code, "PP", m17_4.code, "PP", 2, phase17_24, zone17_24);
+
+    // Ronda 3 (definiciones 17-24)
+    const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
+    const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
+    const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
+    const m17_12 = crearMatchDesdeGP_PP("P17_12", m17_7.code, "PP", m17_8.code, "PP", 3, phase17_24, zone17_24);
+
+    allMatches.push(
       m17_1, m17_2, m17_3, m17_4,
       m17_5, m17_6, m17_7, m17_8,
       m17_9, m17_10, m17_11, m17_12
