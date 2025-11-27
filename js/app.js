@@ -1053,6 +1053,9 @@ function generarEspecial8x3(t) {
     a.localeCompare(b, "es", { numeric: true, sensitivity: "base" })
   );
 
+  // CALCULAR totalEquipos ANTES de las validaciones
+  const totalEquipos = t.teams.length;
+
   // Validación de cantidad de zonas según número de equipos
   if (totalEquipos === 21) {
     if (zoneNames.length !== 7) {
@@ -1099,8 +1102,6 @@ function generarEspecial8x3(t) {
       zonasInvalidas.push({ zona: z, count });
     }
   }
-
-  const totalEquipos = t.teams.length;
 
   // Sólo se permiten zonas de 2 o 3 equipos
   if (zonasInvalidas.length) {
