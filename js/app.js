@@ -845,101 +845,50 @@ function interleaveLists(lists) {
 }
 
 function ordenarMatchesEspecial8x3(matches) {
-  const fase1 = [];
-  const fase2A1 = [];
-  const fase2A2 = [];
-  const puestos9_16 = [];
-  const puestos17_24 = [];
-  const puestos1_8 = [];
-  const otros = [];
+  const fase1 = matches.filter(m => (m.phase || "").includes("Fase 1"));
+  const fase2A1 = matches.filter(m => (m.phase || "").includes("Zona A1"));
+  const fase2A2 = matches.filter(m => (m.phase || "").includes("Zona A2"));
+  const puestos9_16 = matches.filter(m => (m.phase || "").includes("9-16"));
+  const puestos17_24 = matches.filter(m => (m.phase || "").includes("17-24"));
+  const puestos1_8 = matches.filter(m => (m.phase || "").includes("1-8"));
+  const otros = matches.filter(m => ![
+    "Fase 1", "Zona A1", "Zona A2", "9-16", "17-24", "1-8"
+  ].some(phase => (m.phase || "").includes(phase)));
 
-  // Separar por fase
-  matches.forEach((m) => {
-    const phase = m.phase || "";
-    if (phase.indexOf("Fase 1") !== -1) {
-      fase1.push(m);
-    } else if (phase.indexOf("Fase 2") !== -1) {
-      if (m.zone === "Zona A1") {
-        fase2A1.push(m);
-      } else if (m.zone === "Zona A2") {
-        fase2A2.push(m);
-      } else {
-        otros.push(m);
-      }
-    } else if (phase === "Puestos 9-16") {
-      puestos9_16.push(m);
-    } else if (phase === "Puestos 17-24") {
-      puestos17_24.push(m);
-    } else if (phase === "Puestos 1-8") {
-      puestos1_8.push(m);
-    } else {
-      otros.push(m);
-    }
+  // Ordenar Fase 1 por zona y ronda
+  fase1.sort((a, b) => {
+    const zoneA = a.zone || "";
+    const zoneB = b.zone || "";
+    if (zoneA < zoneB) return -1;
+    if (zoneA > zoneB) return 1;
+    return (a.round || 0) - (b.round || 0);
   });
 
-  // Fase 1: no la tocamos acá; se reordena más abajo en el bloque "especial-8x3"
-  const fase1Ordenada = fase1.slice();
+  // Ordenar fases finales por ronda
+  [fase2A1, fase2A2, puestos9_16, puestos17_24].forEach(group => {
+    group.sort((a, b) => (a.round || 0) - (b.round || 0));
+  });
 
-  // Helper: agrupar por ronda
-  function groupByRound(arr) {
-    const map = {};
-    arr.forEach((m) => {
-      const r = m.round || 1;
-      if (!map[r]) map[r] = [];
-      map[r].push(m);
-    });
-    return map;
-  }
+  // Ordenar Puestos 1-8 de forma específica
+  puestos1_8.sort((a, b) => {
+    const getPosition = (m) => {
+      const seed = (m.homeSeed || m.awaySeed || "").toString();
+      const match = seed.match(/(\d+)/);
+      return match ? parseInt(match[1]) : 99;
+    };
+    return getPosition(b) - getPosition(a);
+  });
 
-  const a1 = groupByRound(fase2A1);       // Zona A1 (1° de zonas)
-  const a2 = groupByRound(fase2A2);       // Zona A2 (1° de zonas)
-  const b  = groupByRound(puestos9_16);   // Llave B (9–16)
-  const c  = groupByRound(puestos17_24);  // Llave C (17–24)
-
-  // Ordenar Puestos 1–8 de 7º–8º -> 1º–2º
-  let puestos1_8Ordenados = puestos1_8.slice();
-  try {
-    if (puestos1_8Ordenados.length === 4) {
-      const extraerPos = (m) => {
-        const s = (m.homeSeed || m.awaySeed || "").toString();
-        const match = s.match(/^(\d+)/);
-        return match ? parseInt(match[1], 10) : 99;
-      };
-      // Descendente: primero 7º–8º, después 5º–6º, 3º–4º, 1º–2º
-      puestos1_8Ordenados.sort((a, b) => extraerPos(b) - extraerPos(a));
-    }
-  } catch (e) {
-    console.warn("No se pudo ordenar Puestos 1-8:", e);
-  }
-
-  // Secuencia deseada desde Día 3 en adelante:
-  //  R1 A1 → R1 A2 → R1 B → R1 C
-  //  R2 A1 → R2 A2 → R2 B → R2 C
-  //  R3 A1 → R3 A2 → R3 C → R3 B → Puestos 1–8
-  const otrosOrdenados = []
-    // R1
-    .concat(a1[1] || [])
-    .concat(a2[1] || [])
-    .concat(b[1] || [])
-    .concat(c[1] || [])
-    // R2 (ganadores + perdedores)
-    .concat(a1[2] || [])
-    .concat(a2[2] || [])
-    .concat(b[2] || [])
-    .concat(c[2] || [])
-    // R3 y finales
-    .concat(a1[3] || [])
-    .concat(a2[3] || [])
-    .concat(c[3] || [])           // primero las definiciones C
-    .concat(b[3] || [])           // luego B
-    .concat(puestos1_8Ordenados)  // y al final 7–8 → 1–2
-    .concat(otros);               // cualquier cosa rara que haya quedado
-
-  // Devolvemos: primero toda la fase regular (que luego se redistribuye D1/D2),
-  // luego la fase final ya en el orden "Evita" para días 3–5.
-  return []
-    .concat(fase1Ordenada)
-    .concat(otrosOrdenados);
+  // Concatenar en el orden correcto
+  return [
+    ...fase1,
+    ...fase2A1,
+    ...fase2A2,
+    ...puestos9_16,
+    ...puestos17_24,
+    ...puestos1_8,
+    ...otros
+  ];
 }
 
 
@@ -3037,125 +2986,25 @@ if (
     if (dc && dc.type !== "off") playableDayIndexes.push(idx);
   });
 
-  // --- Reordenar Fase 1 según patrón EVITA ---
-  let fase1Ordenada = fase1.slice();
+  // Ordenar Fase 1 por zona y ronda (esto asegura el orden Z1, Z2, Z3... y luego R1, R2, R3)
+  fase1.sort((a, b) => {
+    const zoneA = a.zone || "";
+    const zoneB = b.zone || "";
+    if (zoneA < zoneB) return -1;
+    if (zoneA > zoneB) return 1;
+    return (a.round || 0) - (b.round || 0);
+  });
 
-  const ordenarZonaRonda = (a, b) => {
-    const za = a.zone || "";
-    const zb = b.zone || "";
-    if (za < zb) return -1;
-    if (za > zb) return 1;
-    const ra = a.round || 0;
-    const rb = b.round || 0;
-    return ra - rb;
-  };
+  // Dividir Fase 1 entre día 1 y día 2 (mitad y mitad)
+  const mitad = Math.ceil(fase1.length / 2);
+  const fase1_dia1 = fase1.slice(0, mitad);
+  const fase1_dia2 = fase1.slice(mitad);
 
-  try {
-    const zonesSet = new Set();
-    const roundsSet = new Set();
-
-    fase1.forEach((m) => {
-      if (m.zone) zonesSet.add(m.zone);
-      if (typeof m.round === "number") roundsSet.add(m.round);
-    });
-
-    const zones = Array.from(zonesSet).sort((a, b) =>
-      ("" + a).localeCompare("" + b, "es", {
-        numeric: true,
-        sensitivity: "base",
-      })
-    );
-    const rounds = Array.from(roundsSet).sort((a, b) => a - b);
-
-    // Aplicamos el patrón si tenemos 7 u 8 zonas y 3 rondas
-    if ((zones.length === 7 || zones.length === 8) && rounds.length >= 3) {
-      const zoneRoundMap = {};
-
-      fase1.forEach((m) => {
-        const z = m.zone || "";
-        const r = m.round || 1;
-        if (!zoneRoundMap[z]) zoneRoundMap[z] = {};
-        if (!zoneRoundMap[z][r]) zoneRoundMap[z][r] = [];
-        zoneRoundMap[z][r].push(m);
-      });
-
-      // Para 21 equipos (7 zonas) usamos solo z1 a z7
-      const [z1, z2, z3, z4, z5, z6, z7] = zones;
-      const z8 = zones.length === 8 ? zones[7] : null;
-
-       let patron;
-      if (zones.length === 8) {
-        // Patrón original para 8 zonas
-        patron = [
-          // Día 1
-          { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-          { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 }, { r: 1, z: z8 },
-          { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-          // Día 2
-          { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 }, { r: 2, z: z8 },
-          { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-          { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 }, { r: 3, z: z8 },
-        ];
-      } else {
-        // Patrón para 7 zonas (21 equipos)
-        patron = [
-          // Día 1
-          { r: 1, z: z1 }, { r: 1, z: z3 }, { r: 1, z: z5 }, { r: 1, z: z7 },
-          { r: 1, z: z2 }, { r: 1, z: z4 }, { r: 1, z: z6 },
-          { r: 2, z: z1 }, { r: 2, z: z3 }, { r: 2, z: z5 }, { r: 2, z: z7 },
-          // Día 2
-          { r: 2, z: z2 }, { r: 2, z: z4 }, { r: 2, z: z6 },
-          { r: 3, z: z1 }, { r: 3, z: z3 }, { r: 3, z: z5 }, { r: 3, z: z7 },
-          { r: 3, z: z2 }, { r: 3, z: z4 }, { r: 3, z: z6 },
-        ];
-      }
-
-      const usados = new Set();
-      const ordered = [];
-
-      patron.forEach(({ r, z }) => {
-        const lista =
-          zoneRoundMap[z] && zoneRoundMap[z][r]
-            ? zoneRoundMap[z][r]
-            : null;
-        if (lista && lista.length) {
-          const m = lista.shift();
-          ordered.push(m);
-          if (m.id != null) usados.add(m.id);
-        }
-      });
-
-      // Por seguridad, si quedara algún partido de Fase 1 sin ubicar, lo agregamos al final
-      fase1.forEach((m) => {
-        if (m.id == null || !usados.has(m.id)) {
-          ordered.push(m);
-        }
-      });
-
-      fase1Ordenada = ordered;
-    } else {
-      // Fallback: el viejo criterio zona+ronda
-      fase1Ordenada.sort(ordenarZonaRonda);
-    }
-  } catch (e) {
-    console.warn("No se pudo aplicar patrón especial Fase 1 (EVITA 8x3):", e);
-    fase1Ordenada = fase1.slice().sort(ordenarZonaRonda);
+  // Asignar días preferidos
+  if (playableDayIndexes.length >= 2) {
+    fase1_dia1.forEach((m) => (m.preferredDayIndex = playableDayIndexes[0]));
+    fase1_dia2.forEach((m) => (m.preferredDayIndex = playableDayIndexes[1]));
   }
-
-  // Elegimos índices reales para los días de zonas
-  const idxDiaZonas1 =
-    playableDayIndexes.length > 0 ? playableDayIndexes[0] : 0;
-  const idxDiaZonas2 =
-    playableDayIndexes.length > 1 ? playableDayIndexes[1] : idxDiaZonas1;
-
-  // Mitad y mitad: primeros 12 partidos -> Día 1, siguientes 12 -> Día 2
-  const mitad = Math.ceil(fase1Ordenada.length / 2);
-  const fase1_dia1 = fase1Ordenada.slice(0, mitad);
-  const fase1_dia2 = fase1Ordenada.slice(mitad);
-
-  // Día preferido para el scheduler
-  fase1_dia1.forEach((m) => (m.preferredDayIndex = idxDiaZonas1));
-  fase1_dia2.forEach((m) => (m.preferredDayIndex = idxDiaZonas2));
 
   // Fases posteriores: mínimo tercer día jugable (si existe)
   if (playableDayIndexes.length > 2) {
@@ -3168,8 +3017,6 @@ if (
   // Actualizamos base: primero Fase 1 (en orden especial), luego el resto
   matchesBase = [].concat(fase1_dia1, fase1_dia2, otros);
 }
-
-    
 
     // Asignar fechas / horas / canchas
     const matches = asignarHorarios(matchesBase, scheduleOptions);
