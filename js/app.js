@@ -3197,45 +3197,55 @@ function renderFixtureResult() {
   const tbody = document.createElement("tbody");
   let rowIndex = 0; // numeración global, sólo partidos reales
 
-t.matches.forEach((m) => {
-  const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-  const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+  // Primero contamos solo partidos normales para la numeración
+  let normalMatchCount = 0;
+  t.matches.forEach((m) => {
+    if (!m.isByeMatch) {
+      normalMatchCount++;
+    }
+  });
 
-  const homeLabel = home ? home.shortName : m.homeSeed || "?";
-  const awayLabel = away ? away.shortName : m.awaySeed || "?";
+  // Segunda pasada: renderizar con numeración correcta
+  let currentMatchNumber = 0;
+  t.matches.forEach((m) => {
+    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
 
-  const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
+    const homeLabel = home ? home.shortName : m.homeSeed || "?";
+    const awayLabel = away ? away.shortName : m.awaySeed || "?";
 
-  const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
+    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "-";
 
-  const tr = document.createElement("tr");
-  
-  // Si es partido BYE, mostramos de manera especial
-  if (m.isByeMatch) {
-    tr.classList.add("bye-match"); // Agregamos una clase CSS para estilizar
-    tr.innerHTML =
-      "<td>-</td>" +  // Sin número de partido
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>-</td>" +  // Sin fecha
-      "<td>-</td>" +  // Sin hora
-      "<td>-</td>" +  // Sin cancha
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
-  } else {
-    // Partido normal
-    rowIndex++;
-    tr.innerHTML =
-      "<td>" + rowIndex + "</td>" +
-      "<td>" + (m.zone || "-") + "</td>" +
-      "<td>" + (m.date || "-") + "</td>" +
-      "<td>" + (m.time || "-") + "</td>" +
-      "<td>" + field + "</td>" +
-      "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
-      "<td>" + phaseRoundLabel + "</td>";
-  }
+    const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.code ? " · " + m.code : "") + ")";
 
-  tbody.appendChild(tr);
-});
+    const tr = document.createElement("tr");
+    
+    // Si es partido BYE, mostramos de manera especial
+    if (m.isByeMatch) {
+      tr.classList.add("bye-match");
+      tr.innerHTML =
+        "<td>-</td>" +  // Sin número de partido
+        "<td>" + (m.zone || "-") + "</td>" +
+        "<td>-</td>" +  // Sin fecha
+        "<td>-</td>" +  // Sin hora
+        "<td>-</td>" +  // Sin cancha
+        "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+        "<td>" + phaseRoundLabel + "</td>";
+    } else {
+      // Partido normal - numeración consecutiva
+      currentMatchNumber++;
+      tr.innerHTML =
+        "<td>" + currentMatchNumber + "</td>" +
+        "<td>" + (m.zone || "-") + "</td>" +
+        "<td>" + (m.date || "-") + "</td>" +
+        "<td>" + (m.time || "-") + "</td>" +
+        "<td>" + field + "</td>" +
+        "<td>" + homeLabel + " vs " + awayLabel + "</td>" +
+        "<td>" + phaseRoundLabel + "</td>";
+    }
+
+    tbody.appendChild(tr);
+  });
 
   table.appendChild(tbody);
   container.appendChild(table);
