@@ -1134,6 +1134,18 @@ function generarEspecial8x3(t) {
       );
       return [];
     }
+      } else if (totalEquipos === 21) {
+    if (zonasCon3 !== 7 || zonasCon2 !== 0) {
+      alert(
+        "Para 21 equipos el formato especial 8×3 requiere 7 zonas de 3 equipos.\n" +
+          "Detectadas: " +
+          zonasCon3 +
+          " zonas de 3 y " +
+          zonasCon2 +
+          " zonas de 2."
+      );
+      return [];
+    }
   } else {
     alert(
       "Por ahora el formato especial 8×3 está preparado sólo para 22, 23 o 24 equipos.\n" +
@@ -1196,9 +1208,18 @@ function generarEspecial8x3(t) {
   const z7 = zoneNames[6];
   const z8 = zoneNames[7];
 
-  // Seeds de los mejores 1°: 1°1° .. 8°1°
-const seedsA1 = ["1°1°", "4°1°", "5°1°", "8°1°"];
-const seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
+  // Seeds para 21 equipos (7 zonas)
+  let seedsA1, seedsA2;
+  
+  if (totalEquipos === 21) {
+    // Para 21 equipos: A1 con 3 mejores 1° + mejor 2°
+    seedsA1 = ["1°1°", "4°1°", "5°1°", "1°2°"];
+    seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
+  } else {
+    // Para 22, 23, 24 equipos (formato original)
+    seedsA1 = ["1°1°", "4°1°", "5°1°", "8°1°"];
+    seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
+  }
 
   const zonaA1 = generarLigaSeeds(seedsA1, {
     idaVuelta: idaVueltaGlobal,
@@ -1301,40 +1322,22 @@ const seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
  const phase9_16 = "Puestos 9-16";
 const zone9_16 = "Puestos 9-16";
 
-// Ronda 1 (mejores 2° con nuevo patrón)
-const m9_1 = crearMatchClasif(
-  "P9_1",
-  "1°2°",
-  "8°2°",
-  1,
-  phase9_16,
-  zone9_16
-);
-const m9_2 = crearMatchClasif(
-  "P9_2",
-  "4°2°",
-  "5°2°",
-  1,
-  phase9_16,
-  zone9_16
-);
-const m9_3 = crearMatchClasif(
-  "P9_3",
-  "3°2°",
-  "6°2°",
-  1,
-  phase9_16,
-  zone9_16
-);
-const m9_4 = crearMatchClasif(
-  "P9_4",
-  "2°2°",
-  "7°2°",
-  1,
-  phase9_16,
-  zone9_16
-);
-
+  // Ronda 1 - Llave B (Puestos 9-16)
+  let m9_1, m9_2, m9_3, m9_4;
+  
+  if (totalEquipos === 21) {
+    // Para 21 equipos: nuevo sembrado de llave B
+    m9_1 = crearMatchClasif("P9_1", "2°2°", "2°3°", 1, phase9_16, zone9_16);
+    m9_2 = crearMatchClasif("P9_2", "5°2°", "6°2°", 1, phase9_16, zone9_16);
+    m9_3 = crearMatchClasif("P9_3", "4°2°", "7°2°", 1, phase9_16, zone9_16);
+    m9_4 = crearMatchClasif("P9_4", "1°3°", "3°2°", 1, phase9_16, zone9_16);
+  } else {
+    // Formato original para 22, 23, 24 equipos
+    m9_1 = crearMatchClasif("P9_1", "1°2°", "8°2°", 1, phase9_16, zone9_16);
+    m9_2 = crearMatchClasif("P9_2", "4°2°", "5°2°", 1, phase9_16, zone9_16);
+    m9_3 = crearMatchClasif("P9_3", "3°2°", "6°2°", 1, phase9_16, zone9_16);
+    m9_4 = crearMatchClasif("P9_4", "2°2°", "7°2°", 1, phase9_16, zone9_16);
+  }
   // Ronda 2 (ganadores y perdedores)
   const m9_5 = crearMatchDesdeGP_PP(
     "P9_5",
@@ -1713,52 +1716,34 @@ if (totalEquipos === 24) {
     m17_11,
     m17_12
   );
+  } else if (totalEquipos === 21) {
+    // Para 21 equipos: nuevo sembrado de llave C
+    const m17_1 = crearMatchClasif("P17_1", "3°3°", "BYE (3°3°)", 1, phase17_24, zone17_24);
+    m17_1.isByeMatch = true;
 
+    const m17_2 = crearMatchClasif("P17_2", "6°3°", "7°3°", 1, phase17_24, zone17_24);
+
+    const m17_3 = crearMatchClasif("P17_3", "4°3°", "BYE (4°3°)", 1, phase17_24, zone17_24);
+    m17_3.isByeMatch = true;
+
+    const m17_4 = crearMatchClasif("P17_4", "BYE (5°3°)", "5°3°", 1, phase17_24, zone17_24);
+    m17_4.isByeMatch = true;
+      allMatches.push(
+      m17_1, m17_2, m17_3, m17_4,
+      m17_5, m17_6, m17_7, m17_8,
+      m17_9, m17_10, m17_11, m17_12
+    );
   } else if (totalEquipos === 22) {
-  // 6 terceros + 2 BYE (1°3° y 2°3° pasan directo)
-  // Patrón:
-  // 1°3° vs BYE
-  // 4°3° vs 5°3°
-  // 3°3° vs 6°3°
-  // 2°3° vs BYE
+    // 6 terceros + 2 BYE (1°3° y 2°3° pasan directo)
+    const m17_1 = crearMatchClasif("P17_1", "1°3°", "BYE (1°3°)", 1, phase17_24, zone17_24);
+    m17_1.isByeMatch = true;
 
-  const m17_1 = crearMatchClasif(
-    "P17_1",
-    "1°3°",
-    "BYE (1°3°)",
-    1,
-    phase17_24,
-    zone17_24
-  );
-  m17_1.isByeMatch = true; // BYE: no se programa
+    const m17_2 = crearMatchClasif("P17_2", "4°3°", "5°3°", 1, phase17_24, zone17_24);
 
-  const m17_2 = crearMatchClasif(
-    "P17_2",
-    "4°3°",
-    "5°3°",
-    1,
-    phase17_24,
-    zone17_24
-  );
+    const m17_3 = crearMatchClasif("P17_3", "3°3°", "6°3°", 1, phase17_24, zone17_24);
 
-  const m17_3 = crearMatchClasif(
-    "P17_3",
-    "3°3°",
-    "6°3°",
-    1,
-    phase17_24,
-    zone17_24
-  );
-
-  const m17_4 = crearMatchClasif(
-    "P17_4",
-    "2°3°",
-    "BYE (2°3°)",
-    1,
-    phase17_24,
-    zone17_24
-  );
-  m17_4.isByeMatch = true; // segundo BYE
+    const m17_4 = crearMatchClasif("P17_4", "2°3°", "BYE (2°3°)", 1, phase17_24, zone17_24);
+    m17_4.isByeMatch = true; // segundo BYE
 
     const m17_5 = crearMatchDesdeGP_PP(
       "P17_5",
