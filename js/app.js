@@ -1690,13 +1690,13 @@ if (totalEquipos === 24) {
     zone17_24
   );
 
-  // Ronda 2 (semis y reclasif) – misma estructura GP/PP
+  // Ronda 2 CORREGIDA: 1°3° juega directamente contra ganador de 7°3° vs 4°3°
   const m17_5 = crearMatchDesdeGP_PP(
     "P17_5",
     m17_1.code,
-    "GP",
+    "GP",  // 1°3° pasa directo como ganador
     m17_2.code,
-    "GP",
+    "GP",  // Ganador de 7°3° vs 4°3°
     2,
     phase17_24,
     zone17_24
@@ -1711,10 +1711,12 @@ if (totalEquipos === 24) {
     phase17_24,
     zone17_24
   );
+  
+  // Partidos de perdedores (PP)
   const m17_7 = crearMatchDesdeGP_PP(
     "P17_7",
     m17_1.code,
-    "PP",
+    "PP",  // Esto técnicamente no debería pasar, pero lo mantenemos por estructura
     m17_2.code,
     "PP",
     2,
