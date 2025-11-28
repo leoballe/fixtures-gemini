@@ -3192,25 +3192,12 @@ if (
   // Actualizamos base: primero Fase 1 (en orden especial), luego el resto
   matchesBase = [].concat(fase1_dia1, fase1_dia2, otros);
 }
-   // =====================================================
-//  Distribución de fases finales (días 3, 4 y 5)
+// =====================================================
+//  Distribución de fases finales (días 3, 4 y 5) - CORREGIDO
 // =====================================================
 if (t.format.type === "especial-8x3") {
-  const fasesFinales = matchesBase.filter(m => 
-    (m.phase || "").includes("Zona A1") || 
-    (m.phase || "").includes("Zona A2") ||
-    (m.phase || "").includes("9-16") ||
-    (m.phase || "").includes("17-24")
-  );
+  console.log("🔀 Aplicando distribución corregida para días 3, 4 y 5");
   
-  const finalesPuestos1_8 = matchesBase.filter(m => 
-    (m.phase || "").includes("1-8")
-  );
-  
-  const otrosPartidos = matchesBase.filter(m => 
-    !fasesFinales.includes(m) && !finalesPuestos1_8.includes(m)
-  );
-
   // Obtener días jugables
   const playableDayIndexes = (dayConfigsFromState || [])
     .map((dc, idx) => (dc && dc.type !== "off") ? idx : -1)
@@ -3218,37 +3205,51 @@ if (t.format.type === "especial-8x3") {
 
   if (playableDayIndexes.length >= 3) {
     const dia3 = playableDayIndexes[2];
-    const dia4 = playableDayIndexes[3] || dia3; // Si no hay día 4, usar día 3
-    const dia5 = playableDayIndexes[4] || dia4; // Si no hay día 5, usar día 4
+    const dia4 = playableDayIndexes[3] || dia3;
+    const dia5 = playableDayIndexes[4] || dia4;
 
-    // Separar fases finales en rondas 1-2 (días 3-4) y rondas 3+ (día 5)
-    const fasesFinalesDias3_4 = fasesFinales.filter(m => (m.round || 0) <= 2);
-    const fasesFinalesDia5 = fasesFinales.filter(m => (m.round || 0) >= 3);
-
-    // Distribuir fases finales de rondas 1-2 entre días 3 y 4
-    const mitadFasesFinales = Math.ceil(fasesFinalesDias3_4.length / 2);
-    const fasesFinalesDia3 = fasesFinalesDias3_4.slice(0, mitadFasesFinales);
-    const fasesFinalesDia4 = fasesFinalesDias3_4.slice(mitadFasesFinales);
-
-    // Asignar días
-    fasesFinalesDia3.forEach(m => m.preferredDayIndex = dia3);
-    fasesFinalesDia4.forEach(m => m.preferredDayIndex = dia4);
+    // Separar partidos por fase y ronda específica
+    const fase1 = matchesBase.filter(m => (m.phase || "").includes("Fase 1"));
     
-    // Todas las finales (ronda 3+ y puestos 1-8) van al día 5
-    fasesFinalesDia5.forEach(m => m.preferredDayIndex = dia5);
-    finalesPuestos1_8.forEach(m => m.preferredDayIndex = dia5);
+    // DÍA 3: R1 A1/A2 (4) + R1 9-16 (4) + R1 17-24 (4) + R2 A1/A2 (4) = 16 partidos
+    const dia3Matches = matchesBase.filter(m => 
+      ((m.phase || "").includes("Zona A1") && m.round === 1) ||
+      ((m.phase || "").includes("Zona A2") && m.round === 1) ||
+      ((m.phase || "").includes("9-16") && m.round === 1) ||
+      ((m.phase || "").includes("17-24") && m.round === 1) ||
+      ((m.phase || "").includes("Zona A1") && m.round === 2) ||
+      ((m.phase || "").includes("Zona A2") && m.round === 2)
+    );
+    
+    // DÍA 4: R2 9-16 (4) + R2 17-24 (4) + R3 A1/A2 (4) + R3 17-24 (4) = 16 partidos
+    const dia4Matches = matchesBase.filter(m => 
+      ((m.phase || "").includes("9-16") && m.round === 2) ||
+      ((m.phase || "").includes("17-24") && m.round === 2) ||
+      ((m.phase || "").includes("Zona A1") && m.round === 3) ||
+      ((m.phase || "").includes("Zona A2") && m.round === 3) ||
+      ((m.phase || "").includes("17-24") && m.round === 3)
+    );
+    
+    // DÍA 5: R3 9-16 (4) + R1 1-8 (4) = 8 partidos
+    const dia5Matches = matchesBase.filter(m => 
+      ((m.phase || "").includes("9-16") && m.round === 3) ||
+      ((m.phase || "").includes("1-8") && m.round === 1)
+    );
 
-    // Reconstruir matchesBase con el nuevo orden
-    matchesBase = [
-      ...otrosPartidos.filter(m => (m.phase || "").includes("Fase 1")), // Fase 1 primero
-      ...fasesFinalesDia3,
-      ...fasesFinalesDia4, 
-      ...fasesFinalesDia5,
-      ...finalesPuestos1_8,
-      ...otrosPartidos.filter(m => !(m.phase || "").includes("Fase 1")) // Otros partidos al final
-    ];
+    // Asignar días preferidos
+    dia3Matches.forEach(m => m.preferredDayIndex = dia3);
+    dia4Matches.forEach(m => m.preferredDayIndex = dia4);
+    dia5Matches.forEach(m => m.preferredDayIndex = dia5);
+
+    console.log("📊 Distribución corregida:");
+    console.log("Día 3:", dia3Matches.length, "partidos");
+    console.log("Día 4:", dia4Matches.length, "partidos"); 
+    console.log("Día 5:", dia5Matches.length, "partidos");
+
+    // Reconstruir matchesBase manteniendo el orden original pero con días asignados
+    // El orden real lo define ordenarMatchesEspecial8x3 más adelante
   }
-} 
+}
     // Asignar fechas / horas / canchas
     const matches = asignarHorarios(matchesBase, scheduleOptions);
     t.matches = matches;
