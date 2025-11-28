@@ -1648,53 +1648,26 @@ if (totalEquipos === 24) {
     );
 } else if (totalEquipos === 23) {
   // 7 terceros + 1 BYE (el 1°3° pasa directo)
-  // CORREGIDO: El partido con BYE debe generar correctamente la referencia en la siguiente ronda
+  // ESTRUCTURA CORREGIDA - sin BYEs adicionales en Ronda 2
   
-  const m17_1 = crearMatchClasif(
-    "P17_1",
-    "1°3°",
-    "BYE",
-    1,
-    phase17_24,
-    zone17_24
-  );
+  // Ronda 1
+  const m17_1 = crearMatchClasif("P17_1", "1°3°", "BYE", 1, phase17_24, zone17_24);
   m17_1.isByeMatch = true;
 
-  const m17_2 = crearMatchClasif(
-    "P17_2",
-    "7°3°",
-    "4°3°",
-    1,
-    phase17_24,
-    zone17_24
-  );
-  const m17_3 = crearMatchClasif(
-    "P17_3",
-    "3°3°",
-    "5°3°",
-    1,
-    phase17_24,
-    zone17_24
-  );
-  const m17_4 = crearMatchClasif(
-    "P17_4",
-    "2°3°",
-    "6°3°",
-    1,
-    phase17_24,
-    zone17_24
-  );
+  const m17_2 = crearMatchClasif("P17_2", "7°3°", "4°3°", 1, phase17_24, zone17_24);
+  const m17_3 = crearMatchClasif("P17_3", "3°3°", "5°3°", 1, phase17_24, zone17_24);
+  const m17_4 = crearMatchClasif("P17_4", "2°3°", "6°3°", 1, phase17_24, zone17_24);
 
-  // Ronda 2 CORREGIDA - 1°3° juega directamente contra ganador de m17_2
+  // Ronda 2 - CORREGIDA: 1°3° vs ganador de m17_2, y solo partidos reales
   const m17_5 = {
     id: safeId("m"),
     code: "P17_5",
     zone: zone17_24,
     homeTeamId: null,
     awayTeamId: null,
-    homeSeed: "1°3°",  // CORREGIDO: Seed directo, no referencia GP
-    awaySeed: "GP " + m17_2.code,  // Referencia al ganador de m17_2
-    fromHomeMatchCode: null,  // No viene de otro partido
+    homeSeed: "1°3°",
+    awaySeed: "GP " + m17_2.code,
+    fromHomeMatchCode: null,
     fromHomeResult: null,
     fromAwayMatchCode: m17_2.code,
     fromAwayResult: "GP",
@@ -1705,112 +1678,23 @@ if (totalEquipos === 24) {
     phase: phase17_24,
   };
 
-  const m17_6 = crearMatchDesdeGP_PP(
-    "P17_6",
-    m17_3.code,
-    "GP",
-    m17_4.code,
-    "GP",
-    2,
-    phase17_24,
-    zone17_24
-  );
+  const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
   
-  // Partidos de perdedores (PP) - CORREGIDO: m17_1 no tiene perdedor real
-  const m17_7 = {
-    id: safeId("m"),
-    code: "P17_7",
-    zone: zone17_24,
-    homeTeamId: null,
-    awayTeamId: null,
-    homeSeed: "PP " + m17_2.code,  // Solo el perdedor de m17_2
-    awaySeed: "PP " + m17_3.code,  // Perdedor de m17_3
-    fromHomeMatchCode: m17_2.code,
-    fromHomeResult: "PP",
-    fromAwayMatchCode: m17_3.code,
-    fromAwayResult: "PP",
-    date: null,
-    time: null,
-    fieldId: null,
-    round: 2,
-    phase: phase17_24,
-  };
+  // Partidos de perdedores - SOLO los que tienen perdedores reales
+  const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_2.code, "PP", m17_3.code, "PP", 2, phase17_24, zone17_24);
+  const m17_8 = crearMatchDesdeGP_PP("P17_8", m17_4.code, "PP", m17_1.code, "PP", 2, phase17_24, zone17_24);
+  // m17_8 tiene un BYE como oponente, pero lo mantenemos por estructura
 
-  const m17_8 = {
-    id: safeId("m"),
-    code: "P17_8",
-    zone: zone17_24,
-    homeTeamId: null,
-    awayTeamId: null,
-    homeSeed: "PP " + m17_4.code,  // Perdedor de m17_4
-    awaySeed: "BYE",  // Placeholder para completar la estructura
-    fromHomeMatchCode: m17_4.code,
-    fromHomeResult: "PP",
-    fromAwayMatchCode: null,
-    fromAwayResult: null,
-    date: null,
-    time: null,
-    fieldId: null,
-    round: 2,
-    phase: phase17_24,
-  };
-  m17_8.isByeMatch = true;
-
-  // Ronda 3 (definiciones 17–24)
-  const m17_9 = crearMatchDesdeGP_PP(
-    "P17_9",
-    m17_5.code,
-    "GP",
-    m17_6.code,
-    "GP",
-    3,
-    phase17_24,
-    zone17_24
-  );
-  const m17_10 = crearMatchDesdeGP_PP(
-    "P17_10",
-    m17_5.code,
-    "PP",
-    m17_6.code,
-    "PP",
-    3,
-    phase17_24,
-    zone17_24
-  );
-  const m17_11 = crearMatchDesdeGP_PP(
-    "P17_11",
-    m17_7.code,
-    "GP",
-    m17_8.code,
-    "GP",
-    3,
-    phase17_24,
-    zone17_24
-  );
-  const m17_12 = crearMatchDesdeGP_PP(
-    "P17_12",
-    m17_7.code,
-    "PP",
-    m17_8.code,
-    "PP",
-    3,
-    phase17_24,
-    zone17_24
-  );
+  // Ronda 3 (definiciones 17-24)
+  const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
+  const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
+  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
+  const m17_12 = crearMatchDesdeGP_PP("P17_12", m17_7.code, "PP", m17_8.code, "PP", 3, phase17_24, zone17_24);
 
   allMatches.push(
-    m17_1,
-    m17_2,
-    m17_3,
-    m17_4,
-    m17_5,
-    m17_6,
-    m17_7,
-    m17_8,
-    m17_9,
-    m17_10,
-    m17_11,
-    m17_12
+    m17_1, m17_2, m17_3, m17_4,
+    m17_5, m17_6, m17_7, m17_8,
+    m17_9, m17_10, m17_11, m17_12
   );
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
@@ -2259,26 +2143,28 @@ function asignarHorarios(matches, options = {}) {
 // =====================
 
 function renumerarPartidosConIdsNumericos(matches) {
+  console.log("=== INICIANDO RENUMERACIÓN ===");
   const codeMap = {};
 
   // 1) Asignar nuevo código numérico a TODOS los partidos
   for (let i = 0; i < matches.length; i++) {
     const m = matches[i];
-    const newCode = String(i + 1); // "1", "2", "3", ...
+    const newCode = String(i + 1);
     const oldCode = m.code || null;
 
     if (oldCode) {
-      codeMap[oldCode] = newCode; // P1 -> 5, etc.
+      codeMap[oldCode] = newCode;
+      console.log(`Mapeo: ${oldCode} -> ${newCode}`);
     }
     m.code = newCode;
   }
 
-  // 2) Actualizar referencias GP/PP y from*MatchCode que usaban los códigos viejos
+  // 2) Actualizar referencias GP/PP
   matches.forEach((m) => {
-    if (m.homeSeed) {
+    if (m.homeSeed && typeof m.homeSeed === 'string') {
       m.homeSeed = reemplazarCodigoEnSeed(m.homeSeed, codeMap);
     }
-    if (m.awaySeed) {
+    if (m.awaySeed && typeof m.awaySeed === 'string') {
       m.awaySeed = reemplazarCodigoEnSeed(m.awaySeed, codeMap);
     }
 
@@ -2290,6 +2176,7 @@ function renumerarPartidosConIdsNumericos(matches) {
     }
   });
 
+  console.log("=== RENUMERACIÓN COMPLETADA ===");
   return matches;
 }
 
@@ -3885,18 +3772,28 @@ function exportPreviewAsPdf() {
   // FUNCIONES AUXILIARES NUEVAS PARA FORMATEO
   // ============================================
   
-  function formatSeedForDisplay(seedLabel) {
-    if (!seedLabel) return "";
-    // Limpiar formatos extraños y unificar
-    return seedLabel
-      .replace(/¹⁶/g, " A1")
-      .replace(/²⁹/g, " A2") 
-      .replace(/³⁹/g, "")
-      .replace(/BYE\s*\([^)]*\)/g, "BYE") // Simplificar BYE (1°3°) -> BYE
-      .replace(/\s+/g, " ")
-      .trim();
+function formatSeedForDisplay(seedLabel) {
+  if (!seedLabel) return "";
+  
+  // Si es un BYE, simplificar
+  if (seedLabel.includes('BYE')) {
+    return 'BYE';
   }
-
+  
+  // Limpiar formatos extraños y unificar
+  let cleaned = seedLabel
+    .replace(/¹⁶/g, " A1")
+    .replace(/²⁹/g, " A2") 
+    .replace(/³⁹/g, "")
+    .replace(/BYE\s*\([^)]*\)/g, "BYE")
+    .replace(/\s+/g, " ")
+    .trim();
+  
+  // Formatear grados correctamente
+  cleaned = cleaned.replace(/(\d+)°/g, '$1°');
+  
+  return cleaned;
+}
   function formatGPPPReference(ref) {
     if (!ref) return "";
     return ref
@@ -4080,45 +3977,49 @@ function exportPreviewAsPdf() {
         ["Fecha", "Hora", "Cancha", "Local", "Visitante", "Zona", "Fase / Ronda", "ID"],
       ];
 
-      // Ordenar con criterio mejorado para modo día
-      const sortedMatches = grouped[key].slice().sort((a, b) => {
-        if (a.isByeMatch && !b.isByeMatch) return 1;
-        if (!a.isByeMatch && b.isByeMatch) return -1;
+      // Ordenar con criterio mejorado para modo día - CORREGIDO
+const sortedMatches = grouped[key].slice().sort((a, b) => {
+  // 1. BYEs al final
+  if (a.isByeMatch && !b.isByeMatch) return 1;
+  if (!a.isByeMatch && b.isByeMatch) return -1;
 
-        // Para modo día, aplicar ordenamiento por fase y ronda
-        if (mode === "day") {
-          const phaseOrder = {
-            'Zona A1': 1,
-            'Zona A2': 2,
-            'Puestos 9-16': 3,
-            'Puestos 17-24': 4
-          };
-          
-          const aPhase = a.phase || "";
-          const bPhase = b.phase || "";
-          const aOrder = phaseOrder[aPhase] || 99;
-          const bOrder = phaseOrder[bPhase] || 99;
-          
-          if (aOrder !== bOrder) return aOrder - bOrder;
-          
-          if (a.round !== b.round) return a.round - b.round;
-        }
-        
-        // Luego por hora
-        const ta = a.time || "";
-        const tb = b.time || "";
-        if (ta < tb) return -1;
-        if (ta > tb) return 1;
+  // 2. Ordenar por fase específica
+  const phaseOrder = {
+    'Zona A1': 1,
+    'Zona A2': 2,
+    'Puestos 9-16': 3,
+    'Puestos 17-24': 4
+  };
+  
+  const aPhase = a.phase || "";
+  const bPhase = b.phase || "";
+  const aOrder = phaseOrder[aPhase] || 99;
+  const bOrder = phaseOrder[bPhase] || 99;
+  
+  if (aOrder !== bOrder) return aOrder - bOrder;
+  
+  // 3. Dentro de misma fase, ordenar por ronda
+  if (a.round !== b.round) return a.round - b.round;
+  
+  // 4. Luego por hora (CORREGIDO: parsear tiempo para ordenar correctamente)
+  const parseTime = (timeStr) => {
+    if (!timeStr) return Infinity;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  
+  const aTime = parseTime(a.time);
+  const bTime = parseTime(b.time);
+  if (aTime !== bTime) return aTime - bTime;
+  
+  // 5. Desempate por cancha
+  const fa = a.fieldId || "";
+  const fb = b.fieldId || "";
+  if (fa < fb) return -1;
+  if (fa > fb) return 1;
 
-        // Desempate por cancha
-        const fa = a.fieldId || "";
-        const fb = b.fieldId || "";
-        if (fa < fb) return -1;
-        if (fa > fb) return 1;
-
-        return 0;
-      });
-
+  return 0;
+});
       sortedMatches.forEach((m) => {
         const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
         const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
