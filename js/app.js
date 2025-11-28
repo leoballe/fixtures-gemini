@@ -1655,14 +1655,14 @@ if (totalEquipos === 24) {
   // 2°3° vs 6°3°
 
   // Partido con BYE: 1°3° clasifica directo
-  const m17_1 = crearMatchClasif(
-    "P17_1",
-    "1°3°",
-    "BYE (1°3°)",
-    1,
-    phase17_24,
-    zone17_24
-  );
+const m17_1 = crearMatchClasif(
+  "P17_1",
+  "1°3°",
+  "BYE",  // ← SIMPLIFICADO
+  1,
+  phase17_24,
+  zone17_24
+);
   m17_1.isByeMatch = true;
 
   const m17_2 = crearMatchClasif(
@@ -3859,6 +3859,41 @@ function exportPreviewAsPdf() {
     fieldById[f.id] = f;
   });
 
+  // ============================================
+  // FUNCIONES AUXILIARES NUEVAS PARA FORMATEO
+  // ============================================
+  
+  function formatSeedForDisplay(seedLabel) {
+    if (!seedLabel) return "";
+    // Limpiar formatos extraños y unificar
+    return seedLabel
+      .replace(/¹⁶/g, " A1")
+      .replace(/²⁹/g, " A2") 
+      .replace(/³⁹/g, "")
+      .replace(/BYE\s*\([^)]*\)/g, "BYE") // Simplificar BYE (1°3°) -> BYE
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function formatGPPPReference(ref) {
+    if (!ref) return "";
+    return ref
+      .replace(/GP\s*(\d+)/g, 'GP $1')
+      .replace(/PP\s*(\d+)/g, 'PP $1')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function formatSeedFinal(seed) {
+    if (!seed) return "";
+    const cleaned = formatSeedForDisplay(seed);
+    return formatGPPPReference(cleaned);
+  }
+
+  // ============================================
+  // GRUPOS Y CONFIGURACIÓN
+  // ============================================
+
   const grouped = {};
 
   if (mode === "zone") {
@@ -3867,20 +3902,19 @@ function exportPreviewAsPdf() {
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(m);
     });
-} else if (mode === "day") {
-  t.matches.forEach((m) => {
-    let key;
-    if (m.isByeMatch && m.phase && m.phase.includes("17-24")) {
-      // BYE de Puestos 17-24 van al día 3 JUGABLE (ignorando días "off")
-      const day3Config = findPlayableDayByIndex(t, 3);
-      key = day3Config ? day3Config.date : "2025-12-03";
-    } else {
-      key = m.date || "Sin fecha";
-    }
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(m);
-  });
-} else if (mode === "field") {
+  } else if (mode === "day") {
+    t.matches.forEach((m) => {
+      let key;
+      if (m.isByeMatch && m.phase && m.phase.includes("17-24")) {
+        const day3Config = findPlayableDayByIndex(t, 3);
+        key = day3Config ? day3Config.date : "2025-12-03";
+      } else {
+        key = m.date || "Sin fecha";
+      }
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(m);
+    });
+  } else if (mode === "field") {
     t.matches.forEach((m) => {
       const key = m.fieldId || "Sin cancha";
       if (!grouped[key]) grouped[key] = [];
@@ -3898,6 +3932,7 @@ function exportPreviewAsPdf() {
       }
     });
   }
+
   // Numeración global que excluye BYE (para todos los modos)
   const matchNumberMap = new Map();
   let globalMatchNumber = 0;
@@ -3907,8 +3942,8 @@ function exportPreviewAsPdf() {
       matchNumberMap.set(m.id, globalMatchNumber);
     }
   });
-  let keys = Object.keys(grouped);
 
+  let keys = Object.keys(grouped);
   let firstGroup = true;
 
   keys.forEach((key) => {
@@ -3920,10 +3955,9 @@ function exportPreviewAsPdf() {
     let headingText = "";
     if (mode === "zone") {
       headingText = "Zona " + key;
-        } else if (mode === "day") {
+    } else if (mode === "day") {
       headingText = "Día " + key;
-    }
-      else if (mode === "field") {
+    } else if (mode === "field") {
       const field = fieldById[key];
       headingText = "Cancha: " + (field ? field.name : key);
     } else if (mode === "team") {
@@ -3937,127 +3971,170 @@ function exportPreviewAsPdf() {
     let head = [];
     const body = [];
 
-   if (mode === "team") {
-  head = [
-    [
-      "Fecha",
-      "Hora",
-      "Cancha",
-      "Rival",
-      "Rol",
-      "Zona",
-      "Fase / Ronda",
-      "ID",
-    ],
-  ];
+    if (mode === "team") {
+      head = [
+        ["Fecha", "Hora", "Cancha", "Rival", "Rol", "Zona", "Fase / Ronda", "ID"],
+      ];
 
-  // Ordenar los partidos del día: primero los normales, luego los BYE
-  const sortedMatches = grouped[key].slice().sort((a, b) => {
-    // Los BYE van al final
-    if (a.isByeMatch && !b.isByeMatch) return 1;
-    if (!a.isByeMatch && b.isByeMatch) return -1;
-    
-    // Si ambos son normales o ambos son BYE, ordenar por hora
-    const ta = a.time || "";
-    const tb = b.time || "";
-    if (ta < tb) return -1;
-    if (ta > tb) return 1;
-    
-    // Desempate por cancha
-    const fa = a.fieldId || "";
-    const fb = b.fieldId || "";
-    if (fa < fb) return -1;
-    if (fa > fb) return 1;
-    
-    return 0;
-  });
+      // Ordenar los partidos del día con mejor criterio
+      const sortedMatches = grouped[key].slice().sort((a, b) => {
+        // 1. BYEs al final
+        if (a.isByeMatch && !b.isByeMatch) return 1;
+        if (!a.isByeMatch && b.isByeMatch) return -1;
+        
+        // 2. Ordenar por fase específica
+        const phaseOrder = {
+          'Zona A1': 1,
+          'Zona A2': 2,
+          'Puestos 9-16': 3,
+          'Puestos 17-24': 4
+        };
+        
+        const aPhase = a.phase || "";
+        const bPhase = b.phase || "";
+        const aOrder = phaseOrder[aPhase] || 99;
+        const bOrder = phaseOrder[bPhase] || 99;
+        
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        
+        // 3. Dentro de misma fase, ordenar por ronda
+        if (a.round !== b.round) return a.round - b.round;
+        
+        // 4. Luego por hora
+        const ta = a.time || "";
+        const tb = b.time || "";
+        if (ta < tb) return -1;
+        if (ta > tb) return 1;
+        
+        // 5. Desempate por cancha
+        const fa = a.fieldId || "";
+        const fb = b.fieldId || "";
+        if (fa < fb) return -1;
+        if (fa > fb) return 1;
+        
+        return 0;
+      });
 
-  sortedMatches.forEach((m) => {
-    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-    const homeLabel = home ? home.shortName : m.homeSeed || "";
-    const awayLabel = away ? away.shortName : m.awaySeed || "";
-    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
-      const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.isByeMatch ? "" : (m.code ? " · " + m.code : "")) + ")";
+      sortedMatches.forEach((m) => {
+        const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+        const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+        
+        // USAR LAS NUEVAS FUNCIONES DE FORMATEO
+        const homeLabel = home ? home.shortName : formatSeedFinal(m.homeSeed) || "?";
+        const awayLabel = away ? away.shortName : formatSeedFinal(m.awaySeed) || "?";
+        
+        const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+        
+        // CORREGIDO: Sin código interno en fase/ronda
+        const phaseRoundLabel = (m.phase || "") + (m.round ? " (R" + m.round + ")" : "");
+
         if (m.isByeMatch) {
-      body.push([
-        "",  // Fecha vacía
-        "",  // Hora vacía
-        "",  // Cancha vacía
-        homeLabel,
-        awayLabel,
-        m.zone || "",
-        phaseRoundLabel,
-        "-",  // ID vacío para BYE
-      ]);
+          body.push([
+            "",  // Fecha vacía
+            "",  // Hora vacía
+            "",  // Cancha vacía
+            homeLabel,
+            awayLabel,
+            m.zone || "",
+            phaseRoundLabel,
+            "-",  // ID vacío para BYE
+          ]);
+        } else {
+          const matchNumber = matchNumberMap.get(m.id) || "";
+          body.push([
+            m.date || "",
+            m.time || "",
+            field,
+            homeLabel,
+            awayLabel,
+            m.zone || "",
+            phaseRoundLabel,
+            matchNumber,
+          ]);
+        }
+      });
     } else {
-      const matchNumber = matchNumberMap.get(m.id) || "";
-      body.push([
-        m.date || "",
-        m.time || "",
-        field,
-        homeLabel,
-        awayLabel,
-        m.zone || "",
-        phaseRoundLabel,
-        matchNumber,  // Usamos la numeración que excluye BYE
-      ]);
+      head = [
+        ["Fecha", "Hora", "Cancha", "Local", "Visitante", "Zona", "Fase / Ronda", "ID"],
+      ];
+
+      // Ordenar con criterio mejorado para modo día
+      const sortedMatches = grouped[key].slice().sort((a, b) => {
+        if (a.isByeMatch && !b.isByeMatch) return 1;
+        if (!a.isByeMatch && b.isByeMatch) return -1;
+
+        // Para modo día, aplicar ordenamiento por fase y ronda
+        if (mode === "day") {
+          const phaseOrder = {
+            'Zona A1': 1,
+            'Zona A2': 2,
+            'Puestos 9-16': 3,
+            'Puestos 17-24': 4
+          };
+          
+          const aPhase = a.phase || "";
+          const bPhase = b.phase || "";
+          const aOrder = phaseOrder[aPhase] || 99;
+          const bOrder = phaseOrder[bPhase] || 99;
+          
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          
+          if (a.round !== b.round) return a.round - b.round;
+        }
+        
+        // Luego por hora
+        const ta = a.time || "";
+        const tb = b.time || "";
+        if (ta < tb) return -1;
+        if (ta > tb) return 1;
+
+        // Desempate por cancha
+        const fa = a.fieldId || "";
+        const fb = b.fieldId || "";
+        if (fa < fb) return -1;
+        if (fa > fb) return 1;
+
+        return 0;
+      });
+
+      sortedMatches.forEach((m) => {
+        const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
+        const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
+        
+        // USAR LAS NUEVAS FUNCIONES DE FORMATEO
+        const homeLabel = home ? home.shortName : formatSeedFinal(m.homeSeed) || "?";
+        const awayLabel = away ? away.shortName : formatSeedFinal(m.awaySeed) || "?";
+        
+        const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
+        
+        // CORREGIDO: Sin código interno en fase/ronda
+        const phaseRoundLabel = (m.phase || "") + (m.round ? " (R" + m.round + ")" : "");
+
+        if (m.isByeMatch) {
+          body.push([
+            "",  // Fecha vacía
+            "",  // Hora vacía
+            "",  // Cancha vacía
+            homeLabel,
+            awayLabel,
+            m.zone || "",
+            phaseRoundLabel,
+            "-",  // ID vacío para BYE
+          ]);
+        } else {
+          body.push([
+            m.date || "",
+            m.time || "",
+            field,
+            homeLabel,
+            awayLabel,
+            m.zone || "",
+            phaseRoundLabel,
+            matchNumberMap.get(m.id) || "", 
+          ]);
+        }
+      });
     }
-  });
-} else {
-  head = [
-    [
-      "Fecha",
-      "Hora",
-      "Cancha",
-      "Local",
-      "Visitante",
-      "Zona",
-      "Fase / Ronda",
-      "ID",
-    ],
-  ];
-
-    // Ordenar: primero partidos normales, luego BYE
-  const sortedMatches = grouped[key].slice().sort((a, b) => {
-    if (a.isByeMatch && !b.isByeMatch) return 1;
-    if (!a.isByeMatch && b.isByeMatch) return -1;
-    return 0;
-  });
-
-  sortedMatches.forEach((m) => {
-    const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
-    const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
-    const homeLabel = home ? home.shortName : m.homeSeed || "";
-    const awayLabel = away ? away.shortName : m.awaySeed || "";
-    const field = m.fieldId && fieldById[m.fieldId] ? fieldById[m.fieldId].name : m.fieldId || "";
-      const phaseRoundLabel = (m.phase || "") + " (R" + (m.round || "-") + (m.isByeMatch ? "" : (m.code ? " · " + m.code : "")) + ")";
-
-    if (m.isByeMatch) {
-      body.push([
-        "",  // Fecha vacía
-        "",  // Hora vacía
-        "",  // Cancha vacía
-        homeLabel,
-        awayLabel,
-        m.zone || "",
-        phaseRoundLabel,
-        "-",  // ID vacío para BYE
-      ]);
-    } else {
-      body.push([
-        m.date || "",
-        m.time || "",
-        field,
-        homeLabel,
-        awayLabel,
-        m.zone || "",
-        phaseRoundLabel,
-        matchNumberMap.get(m.id) || "", 
-      ]);
-    }
-  });
-}
 
     doc.autoTable({
       startY: 22,
