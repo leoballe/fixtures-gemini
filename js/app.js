@@ -912,15 +912,42 @@ function ordenarMatchesEspecial8x3(matches) {
     return resultado;
   }
 
+  // Función para ordenar fases finales por ronda (agrupando todas las fases por ronda)
+  function ordenarFasesFinales() {
+    const todasFasesFinales = [
+      ...fase2A1,
+      ...fase2A2, 
+      ...puestos9_16,
+      ...puestos17_24
+    ];
+    
+    // Obtener todas las rondas únicas
+    const rondas = [...new Set(todasFasesFinales.map(p => p.round))].sort((a, b) => a - b);
+    
+    const resultado = [];
+    
+    // Para cada ronda, agregar todos los partidos de esa ronda de todas las fases
+    rondas.forEach(ronda => {
+      // A1 de esta ronda
+      resultado.push(...fase2A1.filter(p => p.round === ronda));
+      // A2 de esta ronda  
+      resultado.push(...fase2A2.filter(p => p.round === ronda));
+      // 9-16 de esta ronda
+      resultado.push(...puestos9_16.filter(p => p.round === ronda));
+      // 17-24 de esta ronda
+      resultado.push(...puestos17_24.filter(p => p.round === ronda));
+    });
+    
+    return resultado;
+  }
+
   // Ordenar Fase 1
   const fase1Ordenada = ordenarFase1(fase1);
 
-  // Ordenar fases finales por ronda
-  [fase2A1, fase2A2, puestos9_16, puestos17_24].forEach(grupo => {
-    grupo.sort((a, b) => (a.round || 0) - (b.round || 0));
-  });
+  // Ordenar fases finales por ronda (agrupadas)
+  const fasesFinalesOrdenadas = ordenarFasesFinales();
 
-  // Ordenar Puestos 1-8 de forma específica
+  // Ordenar Puestos 1-8 de forma específica (estos van al final del día 5)
   puestos1_8.sort((a, b) => {
     const extraerPosicion = (m) => {
       const s = (m.homeSeed || m.awaySeed || "").toString();
@@ -933,10 +960,7 @@ function ordenarMatchesEspecial8x3(matches) {
   // Concatenar en el orden correcto
   return [
     ...fase1Ordenada,
-    ...fase2A1,
-    ...fase2A2,
-    ...puestos9_16,
-    ...puestos17_24,
+    ...fasesFinalesOrdenadas,
     ...puestos1_8,
     ...otros
   ];
