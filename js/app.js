@@ -1080,34 +1080,44 @@ function generarEspecial8x3(t) {
   // CALCULAR totalEquipos ANTES de las validaciones
   const totalEquipos = t.teams.length;
 
-  // Validación de cantidad de zonas según número de equipos
-  if (totalEquipos === 21) {
-    if (zoneNames.length !== 7) {
-      alert(
-        "Para 21 equipos el formato especial 8×3 requiere exactamente 7 zonas.\n" +
-          "Detectadas: " +
-          zoneNames.length +
-          " zonas. Verificá la columna 'Zona' de los equipos."
-      );
-      return [];
-    }
-  } else if (totalEquipos === 22 || totalEquipos === 23 || totalEquipos === 24) {
-    if (zoneNames.length !== 8) {
-      alert(
-        "Para " + totalEquipos + " equipos el formato especial 8×3 requiere exactamente 8 zonas.\n" +
-          "Detectadas: " +
-          zoneNames.length +
-          " zonas. Verificá la columna 'Zona' de los equipos."
-      );
-      return [];
-    }
-  } else {
+ // Validación de cantidad de zonas según número de equipos
+if (totalEquipos === 20) {
+  if (zoneNames.length !== 7) {
     alert(
-      "El formato especial 8×3 solo funciona con 21, 22, 23 o 24 equipos.\n" +
-        "Equipos detectados: " + totalEquipos
+      "Para 20 equipos el formato especial 8×3 requiere exactamente 7 zonas.\n" +
+        "Detectadas: " +
+        zoneNames.length +
+        " zonas. Verificá la columna 'Zona' de los equipos."
     );
     return [];
   }
+} else if (totalEquipos === 21) {
+  if (zoneNames.length !== 7) {
+    alert(
+      "Para 21 equipos el formato especial 8×3 requiere exactamente 7 zonas.\n" +
+        "Detectadas: " +
+        zoneNames.length +
+        " zonas. Verificá la columna 'Zona' de los equipos."
+    );
+    return [];
+  }
+} else if (totalEquipos === 22 || totalEquipos === 23 || totalEquipos === 24) {
+  if (zoneNames.length !== 8) {
+    alert(
+      "Para " + totalEquipos + " equipos el formato especial 8×3 requiere exactamente 8 zonas.\n" +
+        "Detectadas: " +
+        zoneNames.length +
+        " zonas. Verificá la columna 'Zona' de los equipos."
+    );
+    return [];
+  }
+} else {
+  alert(
+    "El formato especial 8×3 solo funciona con 20, 21, 22, 23 o 24 equipos.\n" +
+      "Equipos detectados: " + totalEquipos
+  );
+  return [];
+}
 
   // Conteo de equipos por zona
   let totalEnZonas = 0;
@@ -1140,64 +1150,76 @@ function generarEspecial8x3(t) {
     return [];
   }
 
-  // Combinaciones admitidas según el manual EVITA
-  if (totalEquipos === 24) {
-    if (zonasCon3 !== 8 || zonasCon2 !== 0) {
-      alert(
-        "Para 24 equipos el formato especial 8×3 requiere 8 zonas de 3 equipos.\n" +
-          "Detectadas: " +
-          zonasCon3 +
-          " zonas de 3 y " +
-          zonasCon2 +
-          " zonas de 2."
-      );
-      return [];
-    }
-  } else if (totalEquipos === 23) {
-    if (zonasCon3 !== 7 || zonasCon2 !== 1) {
-      alert(
-        "Para 23 equipos el formato especial 8×3 requiere 7 zonas de 3 equipos y 1 zona de 2 equipos.\n" +
-          "Detectadas: " +
-          zonasCon3 +
-          " zonas de 3 y " +
-          zonasCon2 +
-          " zonas de 2."
-      );
-      return [];
-    }
-  } else if (totalEquipos === 22) {
-    if (zonasCon3 !== 6 || zonasCon2 !== 2) {
-      alert(
-        "Para 22 equipos el formato especial 8×3 requiere 6 zonas de 3 equipos y 2 zonas de 2 equipos.\n" +
-          "Detectadas: " +
-          zonasCon3 +
-          " zonas de 3 y " +
-          zonasCon2 +
-          " zonas de 2."
-      );
-      return [];
-    }
-      } else if (totalEquipos === 21) {
-    if (zonasCon3 !== 7 || zonasCon2 !== 0) {
-      alert(
-        "Para 21 equipos el formato especial 8×3 requiere 7 zonas de 3 equipos.\n" +
-          "Detectadas: " +
-          zonasCon3 +
-          " zonas de 3 y " +
-          zonasCon2 +
-          " zonas de 2."
-      );
-      return [];
-    }
-  } else {
+// Combinaciones admitidas según el manual EVITA
+if (totalEquipos === 24) {
+  if (zonasCon3 !== 8 || zonasCon2 !== 0) {
     alert(
-      "Por ahora el formato especial 8×3 está preparado sólo para 22, 23 o 24 equipos.\n" +
-        "Equipos detectados en zonas: " +
-        totalEquipos +
-        "."
+      "Para 24 equipos el formato especial 8×3 requiere 8 zonas de 3 equipos.\n" +
+        "Detectadas: " +
+        zonasCon3 +
+        " zonas de 3 y " +
+        zonasCon2 +
+        " zonas de 2."
     );
     return [];
   }
+} else if (totalEquipos === 23) {
+  if (zonasCon3 !== 7 || zonasCon2 !== 1) {
+    alert(
+      "Para 23 equipos el formato especial 8×3 requiere 7 zonas de 3 equipos y 1 zona de 2 equipos.\n" +
+        "Detectadas: " +
+        zonasCon3 +
+        " zonas de 3 y " +
+        zonasCon2 +
+        " zonas de 2."
+    );
+    return [];
+  }
+} else if (totalEquipos === 22) {
+  if (zonasCon3 !== 6 || zonasCon2 !== 2) {
+    alert(
+      "Para 22 equipos el formato especial 8×3 requiere 6 zonas de 3 equipos y 2 zonas de 2 equipos.\n" +
+        "Detectadas: " +
+        zonasCon3 +
+        " zonas de 3 y " +
+        zonasCon2 +
+        " zonas de 2."
+    );
+    return [];
+  }
+} else if (totalEquipos === 21) {
+  if (zonasCon3 !== 7 || zonasCon2 !== 0) {
+    alert(
+      "Para 21 equipos el formato especial 8×3 requiere 7 zonas de 3 equipos.\n" +
+        "Detectadas: " +
+        zonasCon3 +
+        " zonas de 3 y " +
+        zonasCon2 +
+        " zonas de 2."
+    );
+    return [];
+  }
+} else if (totalEquipos === 20) {
+  if (zonasCon3 !== 6 || zonasCon2 !== 1) {
+    alert(
+      "Para 20 equipos el formato especial 8×3 requiere 6 zonas de 3 equipos y 1 zona de 2 equipos.\n" +
+        "Detectadas: " +
+        zonasCon3 +
+        " zonas de 3 y " +
+        zonasCon2 +
+        " zonas de 2."
+    );
+    return [];
+  }
+} else {
+  alert(
+    "Por ahora el formato especial 8×3 está preparado sólo para 20, 21, 22, 23 o 24 equipos.\n" +
+      "Equipos detectados en zonas: " +
+      totalEquipos +
+      "."
+  );
+  return [];
+}
 
   if (totalEnZonas !== totalEquipos) {
     alert(
@@ -1251,18 +1273,18 @@ function generarEspecial8x3(t) {
   const z7 = zoneNames[6];
   const z8 = totalEquipos === 21 ? null : zoneNames[7]; // Para 21 equipos, no hay z8
 
-  // Seeds para 21 equipos (7 zonas)
-  let seedsA1, seedsA2;
-  
-  if (totalEquipos === 21) {
-    // Para 21 equipos: A1 con 3 mejores 1° + mejor 2°
-    seedsA1 = ["1°1°", "4°1°", "5°1°", "1°2°"];
-    seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
-  } else {
-    // Para 22, 23, 24 equipos (formato original)
-    seedsA1 = ["1°1°", "4°1°", "5°1°", "8°1°"];
-    seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
-  }
+// Seeds para diferentes cantidades de equipos
+let seedsA1, seedsA2;
+
+if (totalEquipos === 20 || totalEquipos === 21) {
+  // Para 20 y 21 equipos: A1 con 3 mejores 1° + mejor 2°
+  seedsA1 = ["1°1°", "4°1°", "5°1°", "1°2°"];
+  seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
+} else {
+  // Para 22, 23, 24 equipos (formato original)
+  seedsA1 = ["1°1°", "4°1°", "5°1°", "8°1°"];
+  seedsA2 = ["2°1°", "3°1°", "6°1°", "7°1°"];
+}
 
   const zonaA1 = generarLigaSeeds(seedsA1, {
     idaVuelta: idaVueltaGlobal,
@@ -1366,21 +1388,28 @@ function generarEspecial8x3(t) {
 const zone9_16 = "Puestos 9-16";
 
   // Ronda 1 - Llave B (Puestos 9-16)
-  let m9_1, m9_2, m9_3, m9_4;
-  
-  if (totalEquipos === 21) {
-    // Para 21 equipos: nuevo sembrado de llave B
-    m9_1 = crearMatchClasif("P9_1", "2°2°", "2°3°", 1, phase9_16, zone9_16);
-    m9_2 = crearMatchClasif("P9_2", "5°2°", "6°2°", 1, phase9_16, zone9_16);
-    m9_3 = crearMatchClasif("P9_3", "4°2°", "7°2°", 1, phase9_16, zone9_16);
-    m9_4 = crearMatchClasif("P9_4", "1°3°", "3°2°", 1, phase9_16, zone9_16);
-  } else {
-    // Formato original para 22, 23, 24 equipos
-    m9_1 = crearMatchClasif("P9_1", "1°2°", "8°2°", 1, phase9_16, zone9_16);
-    m9_2 = crearMatchClasif("P9_2", "4°2°", "5°2°", 1, phase9_16, zone9_16);
-    m9_3 = crearMatchClasif("P9_3", "3°2°", "6°2°", 1, phase9_16, zone9_16);
-    m9_4 = crearMatchClasif("P9_4", "2°2°", "7°2°", 1, phase9_16, zone9_16);
-  }
+let m9_1, m9_2, m9_3, m9_4;
+
+if (totalEquipos === 20) {
+  // Para 20 equipos: 6 segundos + 2 mejores terceros
+  m9_1 = crearMatchClasif("P9_1", "2°2°", "2°3°", 1, phase9_16, zone9_16);
+  m9_2 = crearMatchClasif("P9_2", "5°2°", "6°2°", 1, phase9_16, zone9_16);
+  m9_3 = crearMatchClasif("P9_3", "4°2°", "1°3°", 1, phase9_16, zone9_16);
+  m9_4 = crearMatchClasif("P9_4", "3°2°", "BYE (3°2°)", 1, phase9_16, zone9_16);
+  m9_4.isByeMatch = true;
+} else if (totalEquipos === 21) {
+  // Para 21 equipos: nuevo sembrado de llave B
+  m9_1 = crearMatchClasif("P9_1", "2°2°", "2°3°", 1, phase9_16, zone9_16);
+  m9_2 = crearMatchClasif("P9_2", "5°2°", "6°2°", 1, phase9_16, zone9_16);
+  m9_3 = crearMatchClasif("P9_3", "4°2°", "7°2°", 1, phase9_16, zone9_16);
+  m9_4 = crearMatchClasif("P9_4", "1°3°", "3°2°", 1, phase9_16, zone9_16);
+} else {
+  // Formato original para 22, 23, 24 equipos
+  m9_1 = crearMatchClasif("P9_1", "1°2°", "8°2°", 1, phase9_16, zone9_16);
+  m9_2 = crearMatchClasif("P9_2", "4°2°", "5°2°", 1, phase9_16, zone9_16);
+  m9_3 = crearMatchClasif("P9_3", "3°2°", "6°2°", 1, phase9_16, zone9_16);
+  m9_4 = crearMatchClasif("P9_4", "2°2°", "7°2°", 1, phase9_16, zone9_16);
+}
   // Ronda 2 (ganadores y perdedores)
   const m9_5 = crearMatchDesdeGP_PP(
     "P9_5",
@@ -1758,6 +1787,34 @@ if (totalEquipos === 24) {
     m17_10,
     m17_11,
     m17_12
+  );
+  } else if (totalEquipos === 20) {
+  // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
+  const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 1, phase17_24, zone17_24);
+  const m17_2 = crearMatchClasif("P17_2", "4°3°", "5°3°", 1, phase17_24, zone17_24);
+  
+  // Los otros 2 partidos son BYE
+  const m17_3 = crearMatchClasif("P17_3", "BYE (7°3°)", "BYE (7°3°)", 1, phase17_24, zone17_24);
+  m17_3.isByeMatch = true;
+  const m17_4 = crearMatchClasif("P17_4", "BYE (8°3°)", "BYE (8°3°)", 1, phase17_24, zone17_24);
+  m17_4.isByeMatch = true;
+
+  // Ronda 2 (semifinales) - misma estructura GP/PP
+  const m17_5 = crearMatchDesdeGP_PP("P17_5", m17_1.code, "GP", m17_2.code, "GP", 2, phase17_24, zone17_24);
+  const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
+  const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_1.code, "PP", m17_2.code, "PP", 2, phase17_24, zone17_24);
+  const m17_8 = crearMatchDesdeGP_PP("P17_8", m17_3.code, "PP", m17_4.code, "PP", 2, phase17_24, zone17_24);
+
+  // Ronda 3 (definiciones 17-24)
+  const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
+  const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
+  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
+  const m17_12 = crearMatchDesdeGP_PP("P17_12", m17_7.code, "PP", m17_8.code, "PP", 3, phase17_24, zone17_24);
+
+  allMatches.push(
+    m17_1, m17_2, m17_3, m17_4,
+    m17_5, m17_6, m17_7, m17_8,
+    m17_9, m17_10, m17_11, m17_12
   );
     } else if (totalEquipos === 21) {
     // Para 21 equipos: nuevo sembrado de llave C
