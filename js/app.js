@@ -3627,12 +3627,7 @@ t.matches.forEach((m) => {
           ? fieldById[m.fieldId].name
           : m.fieldId || "-";
 
-      const phaseRoundLabel =
-        (m.phase || "") +
-        " (R" +
-        (m.round || "-") +
-        (m.code ? " · " + m.code : "") +
-        ")";
+const phaseRoundLabel = (m.phase || "") + (m.round ? " (R" + m.round + ")" : "");
 
       const tr = document.createElement("tr");
       const matchNumber =
