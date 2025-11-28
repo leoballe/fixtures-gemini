@@ -1658,7 +1658,7 @@ if (totalEquipos === 24) {
   const m17_3 = crearMatchClasif("P17_3", "3°3°", "5°3°", 1, phase17_24, zone17_24);
   const m17_4 = crearMatchClasif("P17_4", "2°3°", "6°3°", 1, phase17_24, zone17_24);
 
-  // Ronda 2 - CORREGIDA: 1°3° vs ganador de m17_2, y solo partidos reales
+  // Ronda 2 - CORREGIDA: 1°3° vs ganador de m17_2
   const m17_5 = {
     id: safeId("m"),
     code: "P17_5",
@@ -1680,21 +1680,21 @@ if (totalEquipos === 24) {
 
   const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
   
-  // Partidos de perdedores - SOLO los que tienen perdedores reales
+  // Partidos de perdedores - SOLO partidos reales (sin BYE en R2)
   const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_2.code, "PP", m17_3.code, "PP", 2, phase17_24, zone17_24);
-  const m17_8 = crearMatchDesdeGP_PP("P17_8", m17_4.code, "PP", m17_1.code, "PP", 2, phase17_24, zone17_24);
-  // m17_8 tiene un BYE como oponente, pero lo mantenemos por estructura
+  
+  // ELIMINADO: m17_8 (partido con BYE que no debería existir)
 
   // Ronda 3 (definiciones 17-24)
   const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
   const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
-  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
-  const m17_12 = crearMatchDesdeGP_PP("P17_12", m17_7.code, "PP", m17_8.code, "PP", 3, phase17_24, zone17_24);
+  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", "PP " + m17_4.code, "GP", 3, phase17_24, zone17_24);
+  // m17_12 eliminado porque no hay partido por puesto 24
 
   allMatches.push(
     m17_1, m17_2, m17_3, m17_4,
-    m17_5, m17_6, m17_7, m17_8,
-    m17_9, m17_10, m17_11, m17_12
+    m17_5, m17_6, m17_7,
+    m17_9, m17_10, m17_11
   );
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
@@ -2181,19 +2181,18 @@ function renumerarPartidosConIdsNumericos(matches) {
 }
 
 function reemplazarCodigoEnSeed(seedLabel, codeMap) {
-  // Solo tocamos cosas tipo "GP P1", "PP P3", etc.
-  const parts = seedLabel.split(" ");
-  if (
-    parts.length === 2 &&
-    (parts[0] === "GP" || parts[0] === "PP")
-  ) {
-    const oldCode = parts[1];
-    const newCode = codeMap[oldCode] || oldCode;
-    return parts[0] + " " + newCode;
+  if (!seedLabel || typeof seedLabel !== 'string') return seedLabel;
+  
+  let newSeed = seedLabel;
+  // Reemplazar todos los códigos antiguos que aparezcan en el seed
+  for (const oldCode in codeMap) {
+    if (codeMap.hasOwnProperty(oldCode)) {
+      const regex = new RegExp('\\b' + oldCode + '\\b', 'g');
+      newSeed = newSeed.replace(regex, codeMap[oldCode]);
+    }
   }
-  return seedLabel; // "1° A", "2° B", etc. se dejan igual
+  return newSeed;
 }
-
 // =====================
 //  INICIALIZACIÓN GENERAL
 // =====================
@@ -3179,30 +3178,35 @@ if (t.format.type === "especial-8x3") {
     // Separar partidos por fase y ronda específica
     const fase1 = matchesBase.filter(m => (m.phase || "").includes("Fase 1"));
     
-    // DÍA 3: R1 A1/A2 (4) + R1 9-16 (4) + R1 17-24 (4) + R2 A1/A2 (4) = 16 partidos
-    const dia3Matches = matchesBase.filter(m => 
-      ((m.phase || "").includes("Zona A1") && m.round === 1) ||
-      ((m.phase || "").includes("Zona A2") && m.round === 1) ||
-      ((m.phase || "").includes("9-16") && m.round === 1) ||
-      ((m.phase || "").includes("17-24") && m.round === 1) ||
-      ((m.phase || "").includes("Zona A1") && m.round === 2) ||
-      ((m.phase || "").includes("Zona A2") && m.round === 2)
-    );
-    
-    // DÍA 4: R2 9-16 (4) + R2 17-24 (4) + R3 A1/A2 (4) + R3 17-24 (4) = 16 partidos
-    const dia4Matches = matchesBase.filter(m => 
-      ((m.phase || "").includes("9-16") && m.round === 2) ||
-      ((m.phase || "").includes("17-24") && m.round === 2) ||
-      ((m.phase || "").includes("Zona A1") && m.round === 3) ||
-      ((m.phase || "").includes("Zona A2") && m.round === 3) ||
-      ((m.phase || "").includes("17-24") && m.round === 3)
-    );
-    
-    // DÍA 5: R3 9-16 (4) + R1 1-8 (4) = 8 partidos
-    const dia5Matches = matchesBase.filter(m => 
-      ((m.phase || "").includes("9-16") && m.round === 3) ||
-      ((m.phase || "").includes("1-8") && m.round === 1)
-    );
+    // REEMPLAZAR la distribución de días 3, 4 y 5 con esta versión corregida:
+
+// DÍA 3: R1 A1/A2 (4) + R1 9-16 (4) + R1 17-24 (4) + R2 A1/A2 (4) = 16 partidos
+const dia3Matches = matchesBase.filter(m => 
+  (((m.phase || "").includes("Zona A1") && m.round === 1) ||
+  ((m.phase || "").includes("Zona A2") && m.round === 1) ||
+  ((m.phase || "").includes("9-16") && m.round === 1) ||
+  ((m.phase || "").includes("17-24") && m.round === 1) ||
+  ((m.phase || "").includes("Zona A1") && m.round === 2) ||
+  ((m.phase || "").includes("Zona A2") && m.round === 2)) &&
+  !m.isByeMatch
+);
+
+// DÍA 4: R2 9-16 (4) + R2 17-24 (4) + R3 A1/A2 (4) + R3 17-24 (4) = 16 partidos  
+const dia4Matches = matchesBase.filter(m => 
+  (((m.phase || "").includes("9-16") && m.round === 2) ||
+  ((m.phase || "").includes("17-24") && m.round === 2) ||
+  ((m.phase || "").includes("Zona A1") && m.round === 3) ||
+  ((m.phase || "").includes("Zona A2") && m.round === 3) ||
+  ((m.phase || "").includes("17-24") && m.round === 3)) &&
+  !m.isByeMatch
+);
+
+// DÍA 5: R3 9-16 (4) + R1 1-8 (4) = 8 partidos
+const dia5Matches = matchesBase.filter(m => 
+  (((m.phase || "").includes("9-16") && m.round === 3) ||
+  ((m.phase || "").includes("1-8") && m.round === 1)) &&
+  !m.isByeMatch
+);
 
     // Asignar días preferidos
     dia3Matches.forEach(m => m.preferredDayIndex = dia3);
@@ -3501,30 +3505,52 @@ t.matches.forEach((m) => {
 
      // Orden dentro de cada grupo
     let rows = grouped[key].slice();
-    if (mode === "day") {
-      rows.sort((a, b) => {
-        // Primero, los BYE van al final del día
-        if (a.isByeMatch && !b.isByeMatch) return 1;
-        if (!a.isByeMatch && b.isByeMatch) return -1;
-        
-        // Si ambos son BYE o ambos no son BYE, ordenar por hora
-        const ta = a.time || "";
-        const tb = b.time || "";
-        if (ta < tb) return -1;
-        if (ta > tb) return 1;
+   // REEMPLAZAR todo el bloque de ordenamiento para modo "day":
+if (mode === "day") {
+  rows.sort((a, b) => {
+    // 1. BYEs al final
+    if (a.isByeMatch && !b.isByeMatch) return 1;
+    if (!a.isByeMatch && b.isByeMatch) return -1;
+    
+    // 2. Ordenar por fase y ronda específica
+    const phaseOrder = {
+      'Zona A1': 1,
+      'Zona A2': 2, 
+      'Puestos 9-16': 3,
+      'Puestos 17-24': 4,
+      'Puestos 1-8': 5
+    };
+    
+    const aPhase = a.phase || "";
+    const bPhase = b.phase || "";
+    const aOrder = phaseOrder[aPhase] || 99;
+    const bOrder = phaseOrder[bPhase] || 99;
+    
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    
+    // 3. Dentro de misma fase, ordenar por ronda
+    if (a.round !== b.round) return a.round - b.round;
+    
+    // 4. Luego por hora (parsear para ordenar correctamente)
+    const parseTime = (timeStr) => {
+      if (!timeStr) return Infinity;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    const aTime = parseTime(a.time);
+    const bTime = parseTime(b.time);
+    if (aTime !== bTime) return aTime - bTime;
+    
+    // 5. Desempate por cancha
+    const fa = a.fieldId || "";
+    const fb = b.fieldId || "";
+    if (fa < fb) return -1;
+    if (fa > fb) return 1;
 
-        // Desempate por cancha
-        const fa = a.fieldId || "";
-        const fb = b.fieldId || "";
-        if (fa < fb) return -1;
-        if (fa > fb) return 1;
-
-        // Desempate final por número de partido global
-        const ida = matchNumberById[a.id] || 0;
-        const idb = matchNumberById[b.id] || 0;
-        return ida - idb;
-      });
-    }
+    return 0;
+  });
+}
 
     rows.forEach((m) => {
       const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
@@ -3772,15 +3798,11 @@ function exportPreviewAsPdf() {
   // FUNCIONES AUXILIARES NUEVAS PARA FORMATEO
   // ============================================
   
+// REEMPLAZAR la función formatSeedForDisplay:
 function formatSeedForDisplay(seedLabel) {
   if (!seedLabel) return "";
   
-  // Si es un BYE, simplificar
-  if (seedLabel.includes('BYE')) {
-    return 'BYE';
-  }
-  
-  // Limpiar formatos extraños y unificar
+  // Limpiar formatos y unificar
   let cleaned = seedLabel
     .replace(/¹⁶/g, " A1")
     .replace(/²⁹/g, " A2") 
@@ -3789,8 +3811,11 @@ function formatSeedForDisplay(seedLabel) {
     .replace(/\s+/g, " ")
     .trim();
   
-  // Formatear grados correctamente
-  cleaned = cleaned.replace(/(\d+)°/g, '$1°');
+  // Formatear grados correctamente y asegurar referencias GP/PP
+  cleaned = cleaned
+    .replace(/(\d+)°/g, '$1°')
+    .replace(/GP\s*(\d+)/g, 'GP $1')
+    .replace(/PP\s*(\d+)/g, 'PP $1');
   
   return cleaned;
 }
