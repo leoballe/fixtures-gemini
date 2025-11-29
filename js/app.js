@@ -1647,30 +1647,28 @@ if (totalEquipos === 24) {
       m17_12
     );
 } else if (totalEquipos === 23) {
-  // ESTRUCTURA CORREGIDA según PDF "llaves 17a23.pdf"
+  // ESTRUCTURA CORREGIDA según PDF "llaves 17a23 nros.pdf" - 9 partidos reales
   // Ronda 1
-  const m17_1 = crearMatchClasif("P17_1", "7°3°", "4°3°", 1, phase17_24, zone17_24);
-  const m17_2 = crearMatchClasif("P17_2", "3°3°", "5°3°", 1, phase17_24, zone17_24);
-  const m17_3 = crearMatchClasif("P17_3", "2°3°", "6°3°", 1, phase17_24, zone17_24);
-  const m17_4 = crearMatchClasif("P17_4", "1°3°", "BYE", 1, phase17_24, zone17_24);
-  m17_4.isByeMatch = true;
+  const m17_32 = crearMatchClasif("P17_32", "7°3°", "4°3°", 1, phase17_24, zone17_24);
+  const m17_33 = crearMatchClasif("P17_33", "3°3°", "5°3°", 1, phase17_24, zone17_24);
+  const m17_34 = crearMatchClasif("P17_34", "2°3°", "6°3°", 1, phase17_24, zone17_24);
+  const m17_43 = crearMatchClasif("P17_43", "1°3°", "BYE", 1, phase17_24, zone17_24);
+  m17_43.isByeMatch = true;
 
   // Ronda 2
-  const m17_5 = crearMatchDesdeGP_PP("P17_5", m17_1.code, "GP", m17_2.code, "GP", 2, phase17_24, zone17_24);
-  const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_4.code, "GP", m17_3.code, "GP", 2, phase17_24, zone17_24);
-  const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_1.code, "PP", m17_2.code, "PP", 2, phase17_24, zone17_24);
-  const m17_8 = crearMatchClasif("P17_8", "PP " + m17_3.code, "BYE", 2, phase17_24, zone17_24);
-  m17_8.isByeMatch = true;
+  const m17_44 = crearMatchDesdeGP_PP("P17_44", m17_32.code, "GP", m17_33.code, "GP", 2, phase17_24, zone17_24);
+  const m17_45 = crearMatchDesdeGP_PP("P17_45", m17_34.code, "GP", m17_43.code, "GP", 2, phase17_24, zone17_24);
+  const m17_50 = crearMatchDesdeGP_PP("P17_50", m17_32.code, "PP", m17_33.code, "PP", 2, phase17_24, zone17_24);
+  const m17_51 = crearMatchClasif("P17_51", "PP " + m17_34.code, "BYE", 2, phase17_24, zone17_24);
+  m17_51.isByeMatch = true;
 
   // Ronda 3
-  const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
-  const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
-  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
+  const m17_52 = crearMatchDesdeGP_PP("P17_52", m17_44.code, "GP", m17_45.code, "GP", 3, phase17_24, zone17_24);
 
   allMatches.push(
-    m17_1, m17_2, m17_3, m17_4,
-    m17_5, m17_6, m17_7, m17_8,
-    m17_9, m17_10, m17_11
+    m17_32, m17_33, m17_34, m17_43,
+    m17_44, m17_45, m17_50, m17_51,
+    m17_52
   );
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
@@ -2122,18 +2120,25 @@ function renumerarPartidosConIdsNumericos(matches) {
   console.log("=== INICIANDO RENUMERACIÓN ===");
   const codeMap = {};
 
-  // 1) Asignar nuevo código numérico a TODOS los partidos
-  for (let i = 0; i < matches.length; i++) {
-    const m = matches[i];
-    const newCode = String(i + 1);
-    const oldCode = m.code || null;
-
-    if (oldCode) {
-      codeMap[oldCode] = newCode;
-      console.log(`Mapeo: ${oldCode} -> ${newCode}`);
-    }
-    m.code = newCode;
+ // 1) Asignar nuevo código numérico a TODOS los partidos
+for (let i = 0; i < matches.length; i++) {
+  const m = matches[i];
+  
+  // LOS PARTIDOS BYE NO RECIBEN NÚMERO
+  if (m.isByeMatch) {
+    m.code = "-"; // Sin número para BYE
+    continue;
   }
+  
+  const newCode = String(i + 1);
+  const oldCode = m.code || null;
+
+  if (oldCode) {
+    codeMap[oldCode] = newCode;
+    console.log(`Mapeo: ${oldCode} -> ${newCode}`);
+  }
+  m.code = newCode;
+}
 
   // 2) Actualizar referencias GP/PP
   matches.forEach((m) => {
@@ -3163,8 +3168,7 @@ const dia3Matches = matchesBase.filter(m =>
   ((m.phase || "").includes("9-16") && m.round === 1) ||
   ((m.phase || "").includes("17-24") && m.round === 1) ||
   ((m.phase || "").includes("Zona A1") && m.round === 2) ||
-  ((m.phase || "").includes("Zona A2") && m.round === 2)) &&
-  !m.isByeMatch
+  ((m.phase || "").includes("Zona A2") && m.round === 2))
 );
 
 // DÍA 4: R2 9-16 (4) + R2 17-24 (4) + R3 A1/A2 (4) + R3 17-24 (4) = 16 partidos  
@@ -3173,15 +3177,13 @@ const dia4Matches = matchesBase.filter(m =>
   ((m.phase || "").includes("17-24") && m.round === 2) ||
   ((m.phase || "").includes("Zona A1") && m.round === 3) ||
   ((m.phase || "").includes("Zona A2") && m.round === 3) ||
-  ((m.phase || "").includes("17-24") && m.round === 3)) &&
-  !m.isByeMatch
+  ((m.phase || "").includes("17-24") && m.round === 3))
 );
 
 // DÍA 5: R3 9-16 (4) + R1 1-8 (4) = 8 partidos
 const dia5Matches = matchesBase.filter(m => 
   (((m.phase || "").includes("9-16") && m.round === 3) ||
-  ((m.phase || "").includes("1-8") && m.round === 1)) &&
-  !m.isByeMatch
+  ((m.phase || "").includes("1-8") && m.round === 1))
 );
 
     // Asignar días preferidos
@@ -3484,14 +3486,10 @@ t.matches.forEach((m) => {
    // REEMPLAZAR todo el bloque de ordenamiento para modo "day":
 if (mode === "day") {
   rows.sort((a, b) => {
-    // 1. BYEs al final
-    if (a.isByeMatch && !b.isByeMatch) return 1;
-    if (!a.isByeMatch && b.isByeMatch) return -1;
-    
-    // 2. Ordenar por fase y ronda específica
+    // ORDEN ESPECÍFICO POR FASE Y RONDA - NO por horario
     const phaseOrder = {
       'Zona A1': 1,
-      'Zona A2': 2, 
+      'Zona A2': 2,
       'Puestos 9-16': 3,
       'Puestos 17-24': 4,
       'Puestos 1-8': 5
@@ -3502,32 +3500,16 @@ if (mode === "day") {
     const aOrder = phaseOrder[aPhase] || 99;
     const bOrder = phaseOrder[bPhase] || 99;
     
+    // Primero por fase
     if (aOrder !== bOrder) return aOrder - bOrder;
     
-    // 3. Dentro de misma fase, ordenar por ronda
+    // Luego por ronda dentro de la misma fase
     if (a.round !== b.round) return a.round - b.round;
     
-    // 4. Luego por hora (parsear para ordenar correctamente)
-    const parseTime = (timeStr) => {
-      if (!timeStr) return Infinity;
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-    
-    const aTime = parseTime(a.time);
-    const bTime = parseTime(b.time);
-    if (aTime !== bTime) return aTime - bTime;
-    
-    // 5. Desempate por cancha
-    const fa = a.fieldId || "";
-    const fb = b.fieldId || "";
-    if (fa < fb) return -1;
-    if (fa > fb) return 1;
-
+    // Mantener el orden original de creación para misma fase y ronda
     return 0;
   });
 }
-
     rows.forEach((m) => {
       const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
       const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
@@ -3978,18 +3960,15 @@ function formatSeedForDisplay(seedLabel) {
         ["Fecha", "Hora", "Cancha", "Local", "Visitante", "Zona", "Fase / Ronda", "ID"],
       ];
 
-      // Ordenar con criterio mejorado para modo día - CORREGIDO
+      // Ordenar con criterio ESPECÍFICO por fase y ronda - NO por horario
 const sortedMatches = grouped[key].slice().sort((a, b) => {
-  // 1. BYEs al final
-  if (a.isByeMatch && !b.isByeMatch) return 1;
-  if (!a.isByeMatch && b.isByeMatch) return -1;
-
-  // 2. Ordenar por fase específica
+  // ORDEN ESPECÍFICO POR FASE Y RONDA
   const phaseOrder = {
     'Zona A1': 1,
     'Zona A2': 2,
     'Puestos 9-16': 3,
-    'Puestos 17-24': 4
+    'Puestos 17-24': 4,
+    'Puestos 1-8': 5
   };
   
   const aPhase = a.phase || "";
@@ -3997,28 +3976,13 @@ const sortedMatches = grouped[key].slice().sort((a, b) => {
   const aOrder = phaseOrder[aPhase] || 99;
   const bOrder = phaseOrder[bPhase] || 99;
   
+  // Primero por fase
   if (aOrder !== bOrder) return aOrder - bOrder;
   
-  // 3. Dentro de misma fase, ordenar por ronda
+  // Luego por ronda dentro de la misma fase
   if (a.round !== b.round) return a.round - b.round;
   
-  // 4. Luego por hora (CORREGIDO: parsear tiempo para ordenar correctamente)
-  const parseTime = (timeStr) => {
-    if (!timeStr) return Infinity;
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
-  
-  const aTime = parseTime(a.time);
-  const bTime = parseTime(b.time);
-  if (aTime !== bTime) return aTime - bTime;
-  
-  // 5. Desempate por cancha
-  const fa = a.fieldId || "";
-  const fb = b.fieldId || "";
-  if (fa < fb) return -1;
-  if (fa > fb) return 1;
-
+  // Mantener el orden original de creación para misma fase y ronda
   return 0;
 });
       sortedMatches.forEach((m) => {
