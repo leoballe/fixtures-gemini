@@ -1672,7 +1672,6 @@ if (totalEquipos === 24) {
     m17_5, m17_6, m17_7, m17_8,
     m17_9, m17_10, m17_11
   );
-}
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
   const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 1, phase17_24, zone17_24);
