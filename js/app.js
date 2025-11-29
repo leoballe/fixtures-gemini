@@ -1647,55 +1647,32 @@ if (totalEquipos === 24) {
       m17_12
     );
 } else if (totalEquipos === 23) {
-  // 7 terceros + 1 BYE (el 1°3° pasa directo)
-  // ESTRUCTURA CORREGIDA - sin BYEs adicionales en Ronda 2
-  
+  // ESTRUCTURA CORREGIDA según PDF "llaves 17a23.pdf"
   // Ronda 1
-  const m17_1 = crearMatchClasif("P17_1", "1°3°", "BYE", 1, phase17_24, zone17_24);
-  m17_1.isByeMatch = true;
+  const m17_1 = crearMatchClasif("P17_1", "7°3°", "4°3°", 1, phase17_24, zone17_24);
+  const m17_2 = crearMatchClasif("P17_2", "3°3°", "5°3°", 1, phase17_24, zone17_24);
+  const m17_3 = crearMatchClasif("P17_3", "2°3°", "6°3°", 1, phase17_24, zone17_24);
+  const m17_4 = crearMatchClasif("P17_4", "1°3°", "BYE", 1, phase17_24, zone17_24);
+  m17_4.isByeMatch = true;
 
-  const m17_2 = crearMatchClasif("P17_2", "7°3°", "4°3°", 1, phase17_24, zone17_24);
-  const m17_3 = crearMatchClasif("P17_3", "3°3°", "5°3°", 1, phase17_24, zone17_24);
-  const m17_4 = crearMatchClasif("P17_4", "2°3°", "6°3°", 1, phase17_24, zone17_24);
+  // Ronda 2
+  const m17_5 = crearMatchDesdeGP_PP("P17_5", m17_1.code, "GP", m17_2.code, "GP", 2, phase17_24, zone17_24);
+  const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_4.code, "GP", m17_3.code, "GP", 2, phase17_24, zone17_24);
+  const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_1.code, "PP", m17_2.code, "PP", 2, phase17_24, zone17_24);
+  const m17_8 = crearMatchClasif("P17_8", "PP " + m17_3.code, "BYE", 2, phase17_24, zone17_24);
+  m17_8.isByeMatch = true;
 
-  // Ronda 2 - CORREGIDA: 1°3° vs ganador de m17_2
-  const m17_5 = {
-    id: safeId("m"),
-    code: "P17_5",
-    zone: zone17_24,
-    homeTeamId: null,
-    awayTeamId: null,
-    homeSeed: "1°3°",
-    awaySeed: "GP " + m17_2.code,
-    fromHomeMatchCode: null,
-    fromHomeResult: null,
-    fromAwayMatchCode: m17_2.code,
-    fromAwayResult: "GP",
-    date: null,
-    time: null,
-    fieldId: null,
-    round: 2,
-    phase: phase17_24,
-  };
-
-  const m17_6 = crearMatchDesdeGP_PP("P17_6", m17_3.code, "GP", m17_4.code, "GP", 2, phase17_24, zone17_24);
-  
-  // Partidos de perdedores - SOLO partidos reales (sin BYE en R2)
-  const m17_7 = crearMatchDesdeGP_PP("P17_7", m17_2.code, "PP", m17_3.code, "PP", 2, phase17_24, zone17_24);
-  
-  // ELIMINADO: m17_8 (partido con BYE que no debería existir)
-
-  // Ronda 3 (definiciones 17-24)
+  // Ronda 3
   const m17_9 = crearMatchDesdeGP_PP("P17_9", m17_5.code, "GP", m17_6.code, "GP", 3, phase17_24, zone17_24);
   const m17_10 = crearMatchDesdeGP_PP("P17_10", m17_5.code, "PP", m17_6.code, "PP", 3, phase17_24, zone17_24);
-  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", "PP " + m17_4.code, "GP", 3, phase17_24, zone17_24);
-  // m17_12 eliminado porque no hay partido por puesto 24
+  const m17_11 = crearMatchDesdeGP_PP("P17_11", m17_7.code, "GP", m17_8.code, "GP", 3, phase17_24, zone17_24);
 
   allMatches.push(
     m17_1, m17_2, m17_3, m17_4,
-    m17_5, m17_6, m17_7,
+    m17_5, m17_6, m17_7, m17_8,
     m17_9, m17_10, m17_11
   );
+}
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
   const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 1, phase17_24, zone17_24);
