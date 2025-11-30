@@ -1647,8 +1647,7 @@ if (totalEquipos === 24) {
       m17_12
     );
 } else if (totalEquipos === 23) {
-  // ESTRUCTURA EXACTA del PDF "llaves 17a23 nros.pdf"
-  
+  // ESTRUCTURA CORREGIDA según PDF "llaves 17a23 nros.pdf" - 9 partidos reales
   // Ronda 1
   const m17_32 = crearMatchClasif("P17_32", "7°3°", "4°3°", 1, phase17_24, zone17_24);
   const m17_33 = crearMatchClasif("P17_33", "3°3°", "5°3°", 1, phase17_24, zone17_24);
@@ -1671,7 +1670,6 @@ if (totalEquipos === 24) {
     m17_44, m17_45, m17_50, m17_51,
     m17_52
   );
-}
 } else if (totalEquipos === 20) {
   // Para 20 equipos: 4 terceros (3°, 4°, 5°, 6°)
   const m17_1 = crearMatchClasif("P17_1", "3°3°", "6°3°", 1, phase17_24, zone17_24);
@@ -2126,9 +2124,9 @@ function renumerarPartidosConIdsNumericos(matches) {
 for (let i = 0; i < matches.length; i++) {
   const m = matches[i];
   
-  // SI ES BYE, NO LE ASIGNamos NÚMERO
+  // LOS PARTIDOS BYE NO RECIBEN NÚMERO
   if (m.isByeMatch) {
-    m.code = "-";
+    m.code = "-"; // Sin número para BYE
     continue;
   }
   
@@ -2137,9 +2135,11 @@ for (let i = 0; i < matches.length; i++) {
 
   if (oldCode) {
     codeMap[oldCode] = newCode;
+    console.log(`Mapeo: ${oldCode} -> ${newCode}`);
   }
   m.code = newCode;
 }
+
   // 2) Actualizar referencias GP/PP
   matches.forEach((m) => {
     if (m.homeSeed && typeof m.homeSeed === 'string') {
