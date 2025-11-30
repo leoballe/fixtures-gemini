@@ -1982,35 +1982,7 @@ function asignarHorarios(matches, options = {}) {
   // =====================
 
   const scheduled = new Array(matches.length);
-  
-  // ORDENAR por fase y ronda específica para asignar horarios en el orden correcto
-  const unscheduledWithPriority = matches.map((m, i) => {
-    let priority = 0;
-    const phase = m.phase || "";
-    
-    // Asignar prioridades según el orden requerido
-    if (phase.includes("Zona A1") || phase.includes("Zona A2")) {
-      if (m.round === 1) priority = 100;
-      else if (m.round === 2) priority = 400; // R2 A1/A2 va después de R1 17-24
-      else if (m.round === 3) priority = 700; // R3 A1/A2 va en día 4
-    } else if (phase.includes("9-16")) {
-      if (m.round === 1) priority = 200;
-      else if (m.round === 2) priority = 500; // R2 9-16 va en día 4
-      else if (m.round === 3) priority = 800; // R3 9-16 va en día 5
-    } else if (phase.includes("17-24")) {
-      if (m.round === 1) priority = 300;
-      else if (m.round === 2) priority = 600; // R2 17-24 va en día 4
-      else if (m.round === 3) priority = 900; // R3 17-24 va en día 4
-    } else if (phase.includes("1-8")) {
-      priority = 1000; // Puestos 1-8 van en día 5
-    }
-    
-    return { index: i, priority: priority + (m.round || 0) };
-  });
-
-  // Ordenar por prioridad
-  unscheduledWithPriority.sort((a, b) => a.priority - b.priority);
-  const unscheduledIdxs = unscheduledWithPriority.map(item => item.index);
+  const unscheduledIdxs = matches.map((_, i) => i);
   const lastEnd = Object.create(null);
   const usedPerDay = new Array(dayConfigs.length).fill(0);
   const maxMatchesPerDay = matches.length; // sin límite real
@@ -3513,21 +3485,31 @@ t.matches.forEach((m) => {
     let rows = grouped[key].slice();
    // REEMPLAZAR todo el bloque de ordenamiento para modo "day":
 if (mode === "day") {
-  // Ordenar por hora (CRONOLÓGICO)
-const sortedMatches = grouped[key].slice().sort((a, b) => {
-  const timeA = a.time || "23:59";
-  const timeB = b.time || "23:59";
-  if (timeA < timeB) return -1;
-  if (timeA > timeB) return 1;
-  
-  // Si misma hora, ordenar por cancha
-  const fieldA = a.fieldId || "";
-  const fieldB = b.fieldId || "";
-  if (fieldA < fieldB) return -1;
-  if (fieldA > fieldB) return 1;
-  
-  return 0;
-});
+  rows.sort((a, b) => {
+    // ORDEN ESPECÍFICO POR FASE Y RONDA - NO por horario
+    const phaseOrder = {
+      'Zona A1': 1,
+      'Zona A2': 2,
+      'Puestos 9-16': 3,
+      'Puestos 17-24': 4,
+      'Puestos 1-8': 5
+    };
+    
+    const aPhase = a.phase || "";
+    const bPhase = b.phase || "";
+    const aOrder = phaseOrder[aPhase] || 99;
+    const bOrder = phaseOrder[bPhase] || 99;
+    
+    // Primero por fase
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    
+    // Luego por ronda dentro de la misma fase
+    if (a.round !== b.round) return a.round - b.round;
+    
+    // Mantener el orden original de creación para misma fase y ronda
+    return 0;
+  });
+}
     rows.forEach((m) => {
       const home = m.homeTeamId ? teamById[m.homeTeamId] : null;
       const away = m.awayTeamId ? teamById[m.awayTeamId] : null;
